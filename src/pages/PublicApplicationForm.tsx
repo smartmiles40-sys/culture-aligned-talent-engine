@@ -2,7 +2,7 @@ import PublicLayout from "@/components/layout/PublicLayout";
 import { MOCK_JOBS } from "@/data/mockData";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Send, CheckCircle, Loader2, FileCheck, AlertCircle } from "lucide-react";
+import { Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import FileUpload from "@/components/shared/FileUpload";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,14 +39,6 @@ const CULTURE_QUESTIONS = [
   { id: "meritocracy", label: "Você acredita que meritocracia deve ser rígida? Por quê?", type: "textarea" },
 ];
 
-interface CvAnalysis {
-  score: number;
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  recommendation: string;
-}
-
 export default function PublicApplicationForm() {
   const { jobId } = useParams<{ jobId: string }>();
   const job = MOCK_JOBS.find((j) => j.id === jobId);
@@ -54,7 +46,6 @@ export default function PublicApplicationForm() {
   const [submitted, setSubmitted] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [cvAnalysis, setCvAnalysis] = useState<CvAnalysis | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -72,52 +63,49 @@ export default function PublicApplicationForm() {
   }
 
   const isCommercial = job.area === "Comercial";
-  // Steps: Personal, CV Upload, Technical, Commercial/Case, Culture
-  const totalSteps = 5;
+  // Steps: Etapa 1 (Personal), Etapa 2 (CV), Etapa 3 (Technical), [Etapa 4 Commercial], Etapa N (Culture)
+  const totalSteps = isCommercial ? 5 : 4;
 
-  const handleCvUploadAndAnalyze = async () => {
+  const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  const textareaClass = "min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+
+  const handleCvUpload = async () => {
     if (!cvFile) {
       setCvError("Por favor, envie seu currículo antes de avançar.");
       return;
     }
-
     setAnalyzing(true);
     setCvError(null);
-
     try {
-      // Upload CV to storage
       const fileName = `${jobId}/${Date.now()}-${cvFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("cvs")
-        .upload(fileName, cvFile);
-
-      if (uploadError) {
-        throw new Error("Erro ao enviar currículo: " + uploadError.message);
-      }
-
-      // Call edge function to analyze
-      const { data, error } = await supabase.functions.invoke("analyze-cv", {
-        body: {
-          cvPath: fileName,
-          jobTitle: job.title,
-          jobArea: job.area,
-          requiredSkills: job.requiredSkills,
-          behavioralProfile: job.behavioralProfile,
-        },
-      });
-
-      if (error) throw new Error(error.message);
-
-      setCvAnalysis(data as CvAnalysis);
+      const { error: uploadError } = await supabase.storage.from("cvs").upload(fileName, cvFile);
+      if (uploadError) throw new Error("Erro ao enviar currículo: " + uploadError.message);
       setStep(step + 1);
     } catch (e: any) {
-      console.error("CV analysis error:", e);
-      setCvError(e.message || "Erro ao analisar currículo. Tente novamente.");
+      setCvError(e.message || "Erro ao enviar currículo.");
       toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally {
       setAnalyzing(false);
     }
   };
+
+  const handleNext = () => {
+    if (step === 1) {
+      handleCvUpload();
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  const getStepContent = () => {
+    if (step === 0) return "personal";
+    if (step === 1) return "cv";
+    if (step === 2) return "technical";
+    if (isCommercial && step === 3) return "commercial";
+    return "culture";
+  };
+
+  const currentContent = getStepContent();
 
   if (submitted) {
     return (
@@ -136,17 +124,6 @@ export default function PublicApplicationForm() {
   }
 
   const progressPercent = ((step + 1) / totalSteps) * 100;
-  const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
-  const textareaClass = "min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
-
-  const handleNext = () => {
-    if (step === 1) {
-      // CV step — need to upload and analyze
-      handleCvUploadAndAnalyze();
-    } else {
-      setStep(step + 1);
-    }
-  };
 
   return (
     <PublicLayout>
@@ -164,10 +141,9 @@ export default function PublicApplicationForm() {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-        {/* Step 0: Personal Data */}
-        {step === 0 && (
+        {currentContent === "personal" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Dados Pessoais</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Etapa 1</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Nome Completo</label>
@@ -189,12 +165,11 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
-        {/* Step 1: CV Upload */}
-        {step === 1 && (
+        {currentContent === "cv" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Envie seu Currículo</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Etapa 2</h2>
             <p className="text-sm text-muted-foreground">
-              Envie seu currículo em PDF ou Word. Ele será analisado automaticamente para verificar a compatibilidade com a vaga.
+              Envie seu currículo em PDF ou Word.
             </p>
             <FileUpload
               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -212,64 +187,15 @@ export default function PublicApplicationForm() {
             {analyzing && (
               <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-4">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Analisando currículo com IA...</p>
-                  <p className="text-xs text-muted-foreground">Isso pode levar alguns segundos</p>
-                </div>
+                <p className="text-sm text-foreground">Enviando currículo...</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Step 2: Technical + CV Analysis Result */}
-        {step === 2 && (
+        {currentContent === "technical" && (
           <div className="space-y-4">
-            {cvAnalysis && (
-              <div className="mb-6 rounded-xl border border-border bg-muted/30 p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileCheck className="h-5 w-5 text-foreground" />
-                  <h3 className="font-display text-base font-bold text-foreground">Análise do Currículo</h3>
-                </div>
-                <div className="mb-3 flex items-center gap-3">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${
-                    cvAnalysis.score >= 70 ? "bg-accent/20 text-foreground" : cvAnalysis.score >= 50 ? "bg-warning/20 text-foreground" : "bg-destructive/10 text-destructive"
-                  }`}>
-                    {cvAnalysis.score}
-                  </div>
-                  <div>
-                    <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${
-                      cvAnalysis.recommendation === "Recomendado" ? "bg-accent/20 text-foreground" :
-                      cvAnalysis.recommendation === "Com Ressalvas" ? "bg-warning/20 text-foreground" :
-                      "bg-destructive/10 text-destructive"
-                    }`}>
-                      {cvAnalysis.recommendation}
-                    </span>
-                    <p className="mt-1 text-sm text-muted-foreground">{cvAnalysis.summary}</p>
-                  </div>
-                </div>
-                {cvAnalysis.strengths.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs font-semibold text-foreground mb-1">Pontos Fortes:</p>
-                    <ul className="space-y-1">
-                      {cvAnalysis.strengths.map((s, i) => (
-                        <li key={i} className="text-xs text-muted-foreground">✓ {s}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {cvAnalysis.weaknesses.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs font-semibold text-foreground mb-1">Pontos de Atenção:</p>
-                    <ul className="space-y-1">
-                      {cvAnalysis.weaknesses.map((w, i) => (
-                        <li key={i} className="text-xs text-muted-foreground">⚠ {w}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-            <h2 className="font-display text-lg font-bold text-foreground">Triagem Técnica</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Etapa 3</h2>
             {TECHNICAL_QUESTIONS.map((q) => (
               <div key={q.id}>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
@@ -287,10 +213,9 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
-        {/* Step 3: Commercial / Case */}
-        {step === 3 && isCommercial && (
+        {currentContent === "commercial" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Performance Comercial</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Etapa 4</h2>
             <p className="text-sm text-muted-foreground">Responda com números reais e envie seu vídeo de apresentação.</p>
             {COMMERCIAL_QUESTIONS.map((q) => (
               <div key={q.id}>
@@ -314,40 +239,9 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
-        {step === 3 && !isCommercial && (
+        {currentContent === "culture" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Caso Prático</h2>
-            {job.practicalCase && (
-              <div className="rounded-lg border border-border bg-muted/50 p-4">
-                <p className="text-sm font-medium text-foreground">Instruções do caso:</p>
-                <p className="mt-1 text-sm text-muted-foreground">{job.practicalCase}</p>
-              </div>
-            )}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Sua resposta ao caso prático</label>
-              <textarea className={textareaClass} rows={6} placeholder="Descreva sua solução..." />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">Arquivo complementar (opcional)</label>
-              <FileUpload
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                label="Arraste seu arquivo ou clique para selecionar"
-                hint="PDF, Word, PowerPoint, Excel"
-                icon="file"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Culture */}
-        {step === 4 && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Fit Cultural</h2>
-            <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
-              <p className="text-xs font-medium text-foreground">
-                ⚡ Esta etapa é eliminatória. Score mínimo: 60/100. Responda com autenticidade.
-              </p>
-            </div>
+            <h2 className="font-display text-lg font-bold text-foreground">Etapa {totalSteps}</h2>
             {CULTURE_QUESTIONS.map((q) => (
               <div key={q.id}>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
@@ -372,7 +266,7 @@ export default function PublicApplicationForm() {
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
-              {step === 1 ? (analyzing ? "Analisando..." : "Enviar e Analisar") : "Próximo"}
+              {step === 1 ? (analyzing ? "Enviando..." : "Enviar Currículo") : "Próximo"}
             </button>
           ) : (
             <button

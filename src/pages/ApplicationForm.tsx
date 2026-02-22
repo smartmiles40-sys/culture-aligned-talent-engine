@@ -2,7 +2,11 @@ import AppLayout from "@/components/layout/AppLayout";
 import { CULTURE_VALUES, AREAS } from "@/data/mockData";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import FileUpload from "@/components/shared/FileUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const TECHNICAL_QUESTIONS = [
   { id: "experience", label: "Descreva sua experiência profissional relevante para esta vaga.", type: "textarea" },
@@ -39,15 +43,67 @@ export default function ApplicationForm() {
   const [area, setArea] = useState<string>("Comercial");
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const isCommercial = area === "Comercial";
-  const steps = [
-    { title: "Dados Pessoais", id: "personal" },
-    { title: "Triagem Técnica", id: "technical" },
-    ...(isCommercial ? [{ title: "Performance Comercial", id: "commercial" }] : []),
-    { title: "Fit Cultural", id: "culture" },
-    { title: "Revisão", id: "review" },
-  ];
+
+  // Steps: Dados Pessoais, Currículo, Triagem Técnica, [Performance Comercial], Fit Cultural, Revisão
+  const totalSteps = isCommercial ? 6 : 5;
+
+  const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  const textareaClass = "min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+
+  const handleCvUploadAndAnalyze = async () => {
+    if (!cvFile) {
+      setCvError("Por favor, envie seu currículo antes de avançar.");
+      return;
+    }
+    setAnalyzing(true);
+    setCvError(null);
+    try {
+      const fileName = `internal/${Date.now()}-${cvFile.name}`;
+      const { error: uploadError } = await supabase.storage.from("cvs").upload(fileName, cvFile);
+      if (uploadError) throw new Error("Erro ao enviar currículo: " + uploadError.message);
+      // Analysis is done internally, just advance
+      setStep(step + 1);
+      toast({ title: "Currículo enviado", description: "O currículo foi enviado com sucesso." });
+    } catch (e: any) {
+      setCvError(e.message || "Erro ao enviar currículo.");
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      handleCvUploadAndAnalyze();
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  // Map step index to content
+  const getStepContent = () => {
+    // Step 0: Dados Pessoais
+    if (step === 0) return "personal";
+    // Step 1: Currículo
+    if (step === 1) return "cv";
+    // Step 2: Triagem Técnica
+    if (step === 2) return "technical";
+    // Step 3: Performance Comercial (only if commercial)
+    if (isCommercial && step === 3) return "commercial";
+    // Culture: step 3 (non-commercial) or step 4 (commercial)
+    const cultureStep = isCommercial ? 4 : 3;
+    if (step === cultureStep) return "culture";
+    // Review: last step
+    return "review";
+  };
+
+  const currentContent = getStepContent();
 
   if (submitted) {
     return (
@@ -58,12 +114,14 @@ export default function ApplicationForm() {
               <CheckCircle className="h-8 w-8 text-success" />
             </div>
             <h2 className="font-display text-2xl font-bold text-foreground">Candidatura Enviada!</h2>
-            <p className="mt-2 text-muted-foreground">Sua aplicação será analisada pela IA e pelo time de recrutamento.</p>
+            <p className="mt-2 text-muted-foreground">Sua aplicação será analisada.</p>
           </div>
         </div>
       </AppLayout>
     );
   }
+
+  const progressPercent = ((step + 1) / totalSteps) * 100;
 
   return (
     <AppLayout>
@@ -74,10 +132,16 @@ export default function ApplicationForm() {
         </div>
 
         {/* Step indicator */}
-        <div className="mb-8 flex items-center gap-2">
-          {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
+        <div className="mb-8">
+          <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Etapa {step + 1} de {totalSteps}</span>
+            <span>{Math.round(progressPercent)}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2" />
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            {Array.from({ length: totalSteps }).map((_, i) => (
               <button
+                key={i}
                 onClick={() => setStep(i)}
                 className={cn(
                   "flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors",
@@ -88,37 +152,35 @@ export default function ApplicationForm() {
                     : "bg-muted text-muted-foreground"
                 )}
               >
-                <span className="font-display">{i + 1}</span>
-                <span className="hidden sm:inline">{s.title}</span>
+                Etapa {i + 1}
               </button>
-              {i < steps.length - 1 && <div className="h-0.5 w-4 bg-muted" />}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-card animate-fade-in">
-          {step === 0 && (
+          {currentContent === "personal" && (
             <div className="space-y-4">
-              <h2 className="font-display text-lg font-bold text-foreground">Dados Pessoais</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">Etapa 1</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Nome Completo</label>
-                  <input className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <input className={inputClass} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-                  <input type="email" className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <input type="email" className={inputClass} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Telefone</label>
-                  <input className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <input className={inputClass} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Área de Interesse</label>
                   <select
                     value={area}
                     onChange={(e) => setArea(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className={inputClass}
                   >
                     {AREAS.map((a) => (
                       <option key={a} value={a}>{a}</option>
@@ -129,102 +191,113 @@ export default function ApplicationForm() {
             </div>
           )}
 
-          {step === 1 && (
+          {currentContent === "cv" && (
             <div className="space-y-4">
-              <h2 className="font-display text-lg font-bold text-foreground">Triagem Técnica</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">Etapa 2</h2>
+              <p className="text-sm text-muted-foreground">
+                Envie seu currículo em PDF ou Word.
+              </p>
+              <FileUpload
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                label="Arraste seu currículo ou clique para selecionar"
+                hint="Formatos aceitos: PDF, DOC, DOCX"
+                icon="file"
+                onChange={(file) => { setCvFile(file); setCvError(null); }}
+              />
+              {cvError && (
+                <div className="flex items-center gap-2 rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {cvError}
+                </div>
+              )}
+              {analyzing && (
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-foreground">Enviando currículo...</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentContent === "technical" && (
+            <div className="space-y-4">
+              <h2 className="font-display text-lg font-bold text-foreground">Etapa 3</h2>
               {TECHNICAL_QUESTIONS.map((q) => (
                 <div key={q.id}>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
                   {q.type === "textarea" ? (
-                    <textarea className="min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <textarea className={textareaClass} />
                   ) : q.type === "select" ? (
-                    <select className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                    <select className={inputClass}>
                       {q.options?.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <input className={inputClass} />
                   )}
                 </div>
               ))}
             </div>
           )}
 
-          {step === 2 && isCommercial && (
+          {currentContent === "commercial" && (
             <div className="space-y-4">
-              <h2 className="font-display text-lg font-bold text-foreground">Performance Comercial</h2>
-              <p className="text-sm text-muted-foreground">Estas perguntas são específicas para vagas comerciais. Responda com números reais.</p>
+              <h2 className="font-display text-lg font-bold text-foreground">Etapa 4</h2>
+              <p className="text-sm text-muted-foreground">Responda com números reais.</p>
               {COMMERCIAL_QUESTIONS.map((q) => (
                 <div key={q.id}>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
                   {q.type === "textarea" ? (
-                    <textarea className="min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <textarea className={textareaClass} />
                   ) : (
-                    <input className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <input className={inputClass} />
                   )}
                 </div>
               ))}
             </div>
           )}
 
-          {step === (isCommercial ? 3 : 2) && (
+          {currentContent === "culture" && (
             <div className="space-y-4">
-              <h2 className="font-display text-lg font-bold text-foreground">Fit Cultural Profundo</h2>
-              <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
-                <p className="text-xs font-medium text-foreground">
-                  ⚡ Esta etapa é eliminatória. Score mínimo: 60/100. Responda com autenticidade.
-                </p>
-              </div>
+              <h2 className="font-display text-lg font-bold text-foreground">Etapa {isCommercial ? 5 : 4}</h2>
               {CULTURE_QUESTIONS.map((q) => (
                 <div key={q.id}>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
-                  <textarea className="min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <textarea className={textareaClass} />
                 </div>
               ))}
             </div>
           )}
 
-          {step === steps.length - 1 && (
+          {currentContent === "review" && (
             <div className="space-y-4">
-              <h2 className="font-display text-lg font-bold text-foreground">Revisão Final</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">Etapa {totalSteps}</h2>
               <p className="text-sm text-muted-foreground">
-                Revise suas respostas antes de enviar. A candidatura será avaliada automaticamente pela IA e também pelo time de recrutamento.
+                Revise suas respostas antes de enviar.
               </p>
-              <div className="rounded-lg border border-border p-4">
-                <h3 className="text-sm font-semibold text-foreground">Pontuação Final (modelo padrão)</h3>
-                <div className="mt-3 space-y-2 text-xs text-muted-foreground">
-                  <div className="flex justify-between"><span>Vídeo / Caso Prático</span><span className="font-semibold text-foreground">25%</span></div>
-                  <div className="flex justify-between"><span>Fit Cultural</span><span className="font-semibold text-foreground">25%</span></div>
-                  <div className="flex justify-between"><span>Aplicação Técnica</span><span className="font-semibold text-foreground">15%</span></div>
-                  <div className="flex justify-between"><span>DISC</span><span className="font-semibold text-foreground">5%</span></div>
-                  <div className="flex justify-between"><span>Entrevista Online</span><span className="font-semibold text-foreground">15%</span></div>
-                  <div className="flex justify-between"><span>Presencial</span><span className="font-semibold text-foreground">15%</span></div>
-                </div>
-              </div>
-              <div className="rounded-lg bg-destructive/5 p-3 text-xs text-destructive">
-                <strong>Regras eliminatórias:</strong> Cultura &lt; 60 → Reprovação automática | Caso técnico &lt; 60 → Reprovação automática
-              </div>
             </div>
           )}
 
           <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
             <button
               onClick={() => setStep(Math.max(0, step - 1))}
-              disabled={step === 0}
+              disabled={step === 0 || analyzing}
               className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
             >
               Voltar
             </button>
-            {step < steps.length - 1 ? (
+            {step < totalSteps - 1 ? (
               <button
-                onClick={() => setStep(step + 1)}
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+                onClick={handleNext}
+                disabled={analyzing || (step === 1 && !cvFile)}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
               >
-                Próximo
+                {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
+                {step === 1 ? (analyzing ? "Enviando..." : "Enviar Currículo") : "Próximo"}
               </button>
             ) : (
               <button
                 onClick={() => setSubmitted(true)}
-                className="flex items-center gap-2 rounded-lg gradient-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90"
+                className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90"
               >
                 <Send className="h-4 w-4" />
                 Enviar Candidatura
