@@ -82,9 +82,9 @@ export default function ApplicationForm() {
                 className={cn(
                   "flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors",
                   i === step
-                    ? "bg-secondary text-secondary-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : i < step
-                    ? "bg-success/10 text-success"
+                    ? "bg-primary/10 text-primary"
                     : "bg-muted text-muted-foreground"
                 )}
               >
@@ -169,8 +169,8 @@ export default function ApplicationForm() {
           {step === (isCommercial ? 3 : 2) && (
             <div className="space-y-4">
               <h2 className="font-display text-lg font-bold text-foreground">Fit Cultural Profundo</h2>
-              <div className="rounded-lg bg-accent/10 p-3">
-                <p className="text-xs font-medium text-accent-foreground">
+              <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
+                <p className="text-xs font-medium text-foreground">
                   ⚡ Esta etapa é eliminatória. Score mínimo: 60/100. Responda com autenticidade.
                 </p>
               </div>
@@ -217,7 +217,7 @@ export default function ApplicationForm() {
             {step < steps.length - 1 ? (
               <button
                 onClick={() => setStep(step + 1)}
-                className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90"
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
               >
                 Próximo
               </button>

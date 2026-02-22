@@ -49,7 +49,7 @@ export default function Dashboard() {
               {CULTURE_VALUES.map((value) => (
                 <span
                   key={value}
-                  className="rounded-md bg-primary/5 px-2 py-1 text-[10px] font-medium text-primary"
+                  className="rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-foreground/70"
                 >
                   {value}
                 </span>

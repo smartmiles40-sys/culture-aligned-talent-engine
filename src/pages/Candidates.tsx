@@ -58,7 +58,7 @@ export default function Candidates() {
               onClick={() => setClassFilter(cls)}
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
-                classFilter === cls ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                classFilter === cls ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
               )}
             >
               {cls === "all" ? "Todos" : cls}

@@ -10,15 +10,15 @@ interface StatCardProps {
 }
 
 const variantStyles = {
-  default: "bg-card shadow-card",
-  accent: "gradient-hero text-primary-foreground",
-  success: "bg-card shadow-card border-l-4 border-l-success",
-  warning: "bg-card shadow-card border-l-4 border-l-warning",
+  default: "bg-card border border-border shadow-card",
+  accent: "bg-primary text-primary-foreground border border-primary",
+  success: "bg-card border border-border shadow-card border-l-4 border-l-success",
+  warning: "bg-card border border-border shadow-card border-l-4 border-l-warning",
 };
 
 const iconVariantStyles = {
   default: "bg-muted text-muted-foreground",
-  accent: "bg-secondary/20 text-secondary-foreground",
+  accent: "bg-primary-foreground/10 text-primary-foreground",
   success: "bg-success/10 text-success",
   warning: "bg-warning/10 text-warning",
 };
