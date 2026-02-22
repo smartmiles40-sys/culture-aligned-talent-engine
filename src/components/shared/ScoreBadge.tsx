@@ -14,8 +14,8 @@ function getClassification(score: number): Classification {
 }
 
 const classColors: Record<Classification, string> = {
-  Forte: "bg-success/10 text-success border-success/20",
-  Desenvolvível: "bg-warning/10 text-warning border-warning/20",
+  Forte: "bg-success/10 text-foreground border-success/30",
+  Desenvolvível: "bg-warning/10 text-foreground border-warning/30",
   Risco: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
