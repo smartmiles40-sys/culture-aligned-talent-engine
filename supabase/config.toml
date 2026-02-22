@@ -1,1 +1,4 @@
 project_id = "gubhgndxtsioihyiuhry"
+
+[functions.analyze-cv]
+verify_jwt = false
