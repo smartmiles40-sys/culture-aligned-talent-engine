@@ -1,6 +1,5 @@
 import PublicLayout from "@/components/layout/PublicLayout";
-import { MOCK_JOBS } from "@/data/mockData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -8,46 +7,91 @@ import FileUpload from "@/components/shared/FileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const TECHNICAL_QUESTIONS = [
-  { id: "experience", label: "Descreva sua experiência profissional relevante para esta vaga.", type: "textarea" },
-  { id: "tools", label: "Quais ferramentas e softwares você domina?", type: "textarea" },
-  { id: "channels", label: "Quais canais de atendimento você já utilizou profissionalmente?", type: "text" },
-  { id: "salary", label: "Qual sua pretensão salarial?", type: "text" },
-  { id: "availability", label: "Você tem disponibilidade para trabalho 100% presencial?", type: "select", options: ["Sim", "Não"] },
-  { id: "previous", label: "Descreva sua experiência anterior mais relevante e os resultados alcançados.", type: "textarea" },
-];
+interface JobData {
+  id: string;
+  title: string;
+  area: string;
+  status: string;
+  practical_case: string | null;
+}
 
-const COMMERCIAL_QUESTIONS = [
-  { id: "monthly_goals", label: "Qual foi sua maior meta mensal atingida? Descreva números.", type: "textarea" },
-  { id: "conversion", label: "Qual sua taxa de conversão média?", type: "text" },
-  { id: "calls_volume", label: "Qual o volume de ligações/contatos que você fazia por dia?", type: "text" },
-  { id: "results_history", label: "Descreva seu histórico de resultados nos últimos 6 meses.", type: "textarea" },
-];
+interface StageData {
+  id: string;
+  stage_key: string;
+  label: string;
+  stage_order: number;
+  is_enabled: boolean;
+}
 
-const CULTURE_QUESTIONS = [
-  { id: "owner_thinking", label: "O que significa 'pensamento de dono' para você? Dê um exemplo real.", type: "textarea" },
-  { id: "error_reaction", label: "Como você reage quando comete um erro no trabalho?", type: "textarea" },
-  { id: "deadlines", label: "Como você lida com prazos apertados?", type: "textarea" },
-  { id: "pressure", label: "Como você reage sob cobrança intensa?", type: "textarea" },
-  { id: "conflicts", label: "Como você resolve conflitos com colegas de trabalho?", type: "textarea" },
-  { id: "priorities", label: "Como você prioriza suas tarefas quando tudo é urgente?", type: "textarea" },
-  { id: "growth", label: "Como você contribui para o crescimento da empresa além da sua função?", type: "textarea" },
-  { id: "confidential", label: "Como você lida com informações confidenciais?", type: "textarea" },
-  { id: "future", label: "Onde você se vê em 3 anos?", type: "textarea" },
-  { id: "responsibility", label: "Se você não bater a meta, de quem é a responsabilidade?", type: "textarea" },
-  { id: "transparency", label: "O que significa transparência no ambiente profissional?", type: "textarea" },
-  { id: "meritocracy", label: "Você acredita que meritocracia deve ser rígida? Por quê?", type: "textarea" },
-];
+interface QuestionData {
+  id: string;
+  stage_id: string;
+  question_text: string;
+  field_type: string;
+  options: any;
+  is_required: boolean;
+  question_order: number;
+}
 
 export default function PublicApplicationForm() {
   const { jobId } = useParams<{ jobId: string }>();
-  const job = MOCK_JOBS.find((j) => j.id === jobId);
+  const [job, setJob] = useState<JobData | null>(null);
+  const [stages, setStages] = useState<StageData[]>([]);
+  const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [cvError, setCvError] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [formData, setFormData] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function loadJob() {
+      if (!jobId) return;
+      const { data: jobData } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", jobId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!jobData) { setLoading(false); return; }
+      setJob(jobData as JobData);
+
+      const { data: stageData } = await supabase
+        .from("job_stages")
+        .select("*")
+        .eq("job_id", jobId)
+        .eq("is_enabled", true)
+        .order("stage_order");
+      setStages((stageData || []) as StageData[]);
+
+      if (stageData?.length) {
+        const stageIds = stageData.map((s: any) => s.id);
+        const { data: questionData } = await supabase
+          .from("stage_questions")
+          .select("*")
+          .in("stage_id", stageIds)
+          .order("question_order");
+        setQuestions((questionData || []) as QuestionData[]);
+      }
+      setLoading(false);
+    }
+    loadJob();
+  }, [jobId]);
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </PublicLayout>
+    );
+  }
 
   if (!job) {
     return (
@@ -62,12 +106,20 @@ export default function PublicApplicationForm() {
     );
   }
 
-  const isCommercial = job.area === "Comercial";
-  // Steps: Etapa 1 (Personal), Etapa 2 (CV), Etapa 3 (Technical), [Etapa 4 Commercial], Etapa N (Culture)
-  const totalSteps = isCommercial ? 5 : 4;
+  // Build form steps: always personal + CV first, then stage-based steps
+  const formSteps: { type: "personal" | "cv" | "stage"; stageId?: string; label: string }[] = [
+    { type: "personal", label: "Etapa 1" },
+    { type: "cv", label: "Etapa 2" },
+  ];
 
-  const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
-  const textareaClass = "min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  // Add stages that have questions (skip cv_upload and application since they're handled)
+  const questionStages = stages.filter(s => !["application", "cv_upload"].includes(s.stage_key) && questions.some(q => q.stage_id === s.id));
+  questionStages.forEach((s, i) => {
+    formSteps.push({ type: "stage", stageId: s.id, label: `Etapa ${i + 3}` });
+  });
+
+  const totalSteps = formSteps.length;
+  const currentStep = formSteps[step];
 
   const handleCvUpload = async () => {
     if (!cvFile) {
@@ -80,9 +132,10 @@ export default function PublicApplicationForm() {
       const fileName = `${jobId}/${Date.now()}-${cvFile.name}`;
       const { error: uploadError } = await supabase.storage.from("cvs").upload(fileName, cvFile);
       if (uploadError) throw new Error("Erro ao enviar currículo: " + uploadError.message);
+      setFormData(prev => ({ ...prev, __cv_url: fileName }));
       setStep(step + 1);
     } catch (e: any) {
-      setCvError(e.message || "Erro ao enviar currículo.");
+      setCvError(e.message);
       toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally {
       setAnalyzing(false);
@@ -90,22 +143,60 @@ export default function PublicApplicationForm() {
   };
 
   const handleNext = () => {
-    if (step === 1) {
+    if (currentStep?.type === "cv") {
       handleCvUpload();
     } else {
       setStep(step + 1);
     }
   };
 
-  const getStepContent = () => {
-    if (step === 0) return "personal";
-    if (step === 1) return "cv";
-    if (step === 2) return "technical";
-    if (isCommercial && step === 3) return "commercial";
-    return "culture";
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      // Create candidate
+      const { data: candidate, error: candidateError } = await supabase
+        .from("candidates")
+        .insert([{
+          job_id: jobId,
+          name: formData.name || "Sem nome",
+          email: formData.email || "sem@email.com",
+          phone: formData.phone || null,
+          cv_url: formData.__cv_url || null,
+          status: "in_progress",
+        }])
+        .select()
+        .single();
+      if (candidateError) throw candidateError;
+
+      // Save responses
+      const responseEntries = Object.entries(formData)
+        .filter(([key]) => key.startsWith("q_"))
+        .map(([key, value]) => ({
+          candidate_id: candidate.id,
+          question_id: key.replace("q_", ""),
+          response_value: value,
+        }));
+      if (responseEntries.length > 0) {
+        await supabase.from("candidate_responses").insert(responseEntries);
+      }
+
+      // Trigger CV analysis in background
+      if (formData.__cv_url) {
+        supabase.functions.invoke("analyze-cv", {
+          body: { fileName: formData.__cv_url, candidateId: candidate.id, jobTitle: job.title },
+        }).catch(() => {});
+      }
+
+      setSubmitted(true);
+    } catch (e: any) {
+      toast({ title: "Erro ao enviar", description: e.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const currentContent = getStepContent();
+  const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  const textareaClass = "min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
   if (submitted) {
     return (
@@ -141,36 +232,30 @@ export default function PublicApplicationForm() {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-        {currentContent === "personal" && (
+        {currentStep?.type === "personal" && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-foreground">Etapa 1</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Nome Completo</label>
-                <input className={inputClass} />
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Nome Completo *</label>
+                <input value={formData.name || ""} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} className={inputClass} required />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-                <input type="email" className={inputClass} />
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Email *</label>
+                <input type="email" value={formData.email || ""} onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))} className={inputClass} required />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Telefone</label>
-                <input className={inputClass} />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">LinkedIn (opcional)</label>
-                <input className={inputClass} placeholder="https://linkedin.com/in/..." />
+                <input value={formData.phone || ""} onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))} className={inputClass} />
               </div>
             </div>
           </div>
         )}
 
-        {currentContent === "cv" && (
+        {currentStep?.type === "cv" && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-foreground">Etapa 2</h2>
-            <p className="text-sm text-muted-foreground">
-              Envie seu currículo em PDF ou Word.
-            </p>
+            <p className="text-sm text-muted-foreground">Envie seu currículo em PDF ou Word.</p>
             <FileUpload
               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               label="Arraste seu currículo ou clique para selecionar"
@@ -180,8 +265,7 @@ export default function PublicApplicationForm() {
             />
             {cvError && (
               <div className="flex items-center gap-2 rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                {cvError}
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />{cvError}
               </div>
             )}
             {analyzing && (
@@ -193,61 +277,50 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
-        {currentContent === "technical" && (
+        {currentStep?.type === "stage" && currentStep.stageId && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Etapa 3</h2>
-            {TECHNICAL_QUESTIONS.map((q) => (
-              <div key={q.id}>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
-                {q.type === "textarea" ? (
-                  <textarea className={textareaClass} />
-                ) : q.type === "select" ? (
-                  <select className={inputClass}>
-                    {q.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                ) : (
-                  <input className={inputClass} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {currentContent === "commercial" && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Etapa 4</h2>
-            <p className="text-sm text-muted-foreground">Responda com números reais e envie seu vídeo de apresentação.</p>
-            {COMMERCIAL_QUESTIONS.map((q) => (
-              <div key={q.id}>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
-                {q.type === "textarea" ? (
-                  <textarea className={textareaClass} />
-                ) : (
-                  <input className={inputClass} />
-                )}
-              </div>
-            ))}
-            <div className="mt-4">
-              <label className="mb-2 block text-sm font-medium text-foreground">Vídeo de Apresentação</label>
-              <FileUpload
-                accept="video/mp4,video/quicktime,video/webm"
-                label="Arraste seu vídeo ou clique para selecionar"
-                hint="Formatos aceitos: MP4, MOV, WEBM • Máximo 2 minutos"
-                icon="video"
-              />
-            </div>
-          </div>
-        )}
-
-        {currentContent === "culture" && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Etapa {totalSteps}</h2>
-            {CULTURE_QUESTIONS.map((q) => (
-              <div key={q.id}>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">{q.label}</label>
-                <textarea className={textareaClass} />
-              </div>
-            ))}
+            <h2 className="font-display text-lg font-bold text-foreground">{currentStep.label}</h2>
+            {questions
+              .filter(q => q.stage_id === currentStep.stageId)
+              .map((q) => (
+                <div key={q.id}>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">
+                    {q.question_text}{q.is_required && " *"}
+                  </label>
+                  {q.field_type === "textarea" ? (
+                    <textarea
+                      value={formData[`q_${q.id}`] || ""}
+                      onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                      className={textareaClass}
+                    />
+                  ) : q.field_type === "select" && q.options ? (
+                    <select
+                      value={formData[`q_${q.id}`] || ""}
+                      onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                      className={inputClass}
+                    >
+                      <option value="">Selecione...</option>
+                      {(Array.isArray(q.options) ? q.options : []).map((o: string) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : q.field_type === "number" ? (
+                    <input
+                      type="number"
+                      value={formData[`q_${q.id}`] || ""}
+                      onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                      className={inputClass}
+                    />
+                  ) : (
+                    <input
+                      value={formData[`q_${q.id}`] || ""}
+                      onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                      className={inputClass}
+                    />
+                  )}
+                </div>
+              ))}
+            {questions.filter(q => q.stage_id === currentStep.stageId).length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhuma pergunta configurada para esta etapa.</p>
+            )}
           </div>
         )}
 
@@ -262,19 +335,20 @@ export default function PublicApplicationForm() {
           {step < totalSteps - 1 ? (
             <button
               onClick={handleNext}
-              disabled={analyzing || (step === 1 && !cvFile)}
+              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email))}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
-              {step === 1 ? (analyzing ? "Enviando..." : "Enviar Currículo") : "Próximo"}
+              {currentStep?.type === "cv" ? (analyzing ? "Enviando..." : "Enviar Currículo") : "Próximo"}
             </button>
           ) : (
             <button
-              onClick={() => setSubmitted(true)}
-              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90 disabled:opacity-50"
             >
-              <Send className="h-4 w-4" />
-              Enviar Candidatura
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {submitting ? "Enviando..." : "Enviar Candidatura"}
             </button>
           )}
         </div>

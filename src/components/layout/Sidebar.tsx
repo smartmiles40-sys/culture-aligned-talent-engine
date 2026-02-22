@@ -1,16 +1,17 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Briefcase, Users, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Briefcase, Users, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/vagas", icon: Briefcase, label: "Vagas" },
   { to: "/candidatos", icon: Users, label: "Candidatos" },
-  { to: "/formulario", icon: FileText, label: "Formulário" },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
+  const { user, role, signOut } = useAuth();
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
@@ -26,7 +27,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {NAV_ITEMS.map((item) => {
-          const active = location.pathname === item.to || 
+          const active = location.pathname === item.to ||
             (item.to !== "/" && location.pathname.startsWith(item.to));
           return (
             <Link
@@ -47,10 +48,17 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border p-4">
-        <div className="rounded-lg bg-sidebar-accent/50 p-3">
-          <p className="font-display text-xs font-semibold text-sidebar-foreground">Cultura é inegociável</p>
-          <p className="mt-1 text-[10px] text-sidebar-foreground/50">Alta performance + alinhamento cultural</p>
+        <div className="mb-3 rounded-lg bg-sidebar-accent/50 p-3">
+          <p className="truncate text-xs font-medium text-sidebar-foreground">{user?.email}</p>
+          <p className="text-[10px] text-sidebar-foreground/50 capitalize">{role || "—"}</p>
         </div>
+        <button
+          onClick={signOut}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Sair
+        </button>
       </div>
     </aside>
   );
