@@ -18,11 +18,11 @@
     --primary: 184 65% 10%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 75 72% 65%;
-    --secondary-foreground: 184 65% 10%;
+    --secondary: 184 65% 10%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 340 5% 92%;
-    --muted-foreground: 180 8% 40%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 185 8% 40%;
 
     --accent: 75 72% 65%;
     --accent-foreground: 184 65% 10%;
@@ -39,9 +39,9 @@
     --info: 210 79% 46%;
     --info-foreground: 0 0% 100%;
 
-    --border: 180 5% 88%;
-    --input: 180 5% 88%;
-    --ring: 75 72% 65%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 184 65% 10%;
 
     --radius: 0.75rem;
 

@@ -40,7 +40,7 @@ export default function JobCard({ job }: JobCardProps) {
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {job.requiredSkills.slice(0, 4).map((skill) => (
-          <span key={skill} className="rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-medium text-secondary">
+          <span key={skill} className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/70">
             {skill}
           </span>
         ))}

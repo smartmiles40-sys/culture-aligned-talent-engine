@@ -17,7 +17,7 @@ export default function Jobs() {
           <h1 className="font-display text-3xl font-bold text-foreground">Vagas</h1>
           <p className="mt-1 text-sm text-muted-foreground">Gerencie as vagas e configure o processo seletivo</p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90">
+        <button className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90">
           <Plus className="h-4 w-4" />
           Nova Vaga
         </button>
