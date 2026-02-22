@@ -72,6 +72,7 @@ export const MOCK_JOBS: JobConfig[] = [
     minTechnicalScore: 60,
     createdAt: "2026-02-20",
     applicants: 18,
+    practicalCase: "Crie uma campanha de mídia paga para um produto de turismo de luxo. Defina público-alvo, canais, orçamento e KPIs esperados.",
   },
   {
     id: "4",
@@ -85,6 +86,7 @@ export const MOCK_JOBS: JobConfig[] = [
     minTechnicalScore: 60,
     createdAt: "2026-02-21",
     applicants: 0,
+    practicalCase: "Organize o fluxo de reservas de um hotel com 50 quartos para um feriado prolongado. Descreva prioridades e ferramentas.",
   },
 ];
 

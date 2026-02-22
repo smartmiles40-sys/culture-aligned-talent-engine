@@ -4,6 +4,7 @@ import ScoreBadge from "@/components/shared/ScoreBadge";
 import StageIndicator from "@/components/shared/StageIndicator";
 import { AlertTriangle, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -13,7 +14,7 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
   const currentStageName = STAGES.find((s) => s.id === candidate.currentStage)?.label;
 
   return (
-    <div className="group rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-card-hover">
+    <Link to={`/candidatos/${candidate.id}`} className="group block rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-card-hover">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3">
@@ -77,6 +78,6 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
           );
         })}
       </div>
-    </div>
+    </Link>
   );
 }
