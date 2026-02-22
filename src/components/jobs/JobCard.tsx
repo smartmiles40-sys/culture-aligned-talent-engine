@@ -1,7 +1,8 @@
 import { JobConfig } from "@/data/types";
 import { cn } from "@/lib/utils";
-import { Users, Calendar, ChevronRight } from "lucide-react";
+import { Users, Calendar, ChevronRight, Copy, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface JobCardProps {
   job: JobConfig;
@@ -20,9 +21,19 @@ const statusLabels = {
 };
 
 export default function JobCard({ job }: JobCardProps) {
+  const { toast } = useToast();
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const link = `${window.location.origin}/aplicar/${job.id}`;
+    navigator.clipboard.writeText(link);
+    toast({ title: "Link copiado!", description: link });
+  };
+
   return (
     <Link
-      to={`/vagas/${job.id}`}
+      to={`/vagas/${job.id}/configurar`}
       className="group block rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:shadow-card-hover"
     >
       <div className="flex items-start justify-between">
@@ -46,15 +57,27 @@ export default function JobCard({ job }: JobCardProps) {
         ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <Users className="h-3.5 w-3.5" />
-          {job.applicants} candidatos
-        </span>
-        <span className="flex items-center gap-1">
-          <Calendar className="h-3.5 w-3.5" />
-          {new Date(job.createdAt).toLocaleDateString("pt-BR")}
-        </span>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5" />
+            {job.applicants} candidatos
+          </span>
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5" />
+            {new Date(job.createdAt).toLocaleDateString("pt-BR")}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleCopyLink}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="Copiar link de candidatura"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+          <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
       </div>
     </Link>
   );
