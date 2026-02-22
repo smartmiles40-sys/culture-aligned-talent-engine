@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      block_template_questions: {
+        Row: {
+          block_template_id: string
+          created_at: string
+          field_type: string
+          id: string
+          is_required: boolean | null
+          options: Json | null
+          question_order: number
+          question_text: string
+        }
+        Insert: {
+          block_template_id: string
+          created_at?: string
+          field_type?: string
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          question_order: number
+          question_text: string
+        }
+        Update: {
+          block_template_id?: string
+          created_at?: string
+          field_type?: string
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          question_order?: number
+          question_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "block_template_questions_block_template_id_fkey"
+            columns: ["block_template_id"]
+            isOneToOne: false
+            referencedRelation: "block_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      block_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_eliminatory: boolean | null
+          name: string
+          stage_key: string
+          suggested_weight: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_eliminatory?: boolean | null
+          name: string
+          stage_key: string
+          suggested_weight?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_eliminatory?: boolean | null
+          name?: string
+          stage_key?: string
+          suggested_weight?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       candidate_disc: {
         Row: {
           alerts: string[] | null
@@ -235,6 +312,7 @@ export type Database = {
           job_id: string
           label: string
           min_score: number | null
+          source_block_id: string | null
           stage_key: string
           stage_order: number
           weight: number | null
@@ -247,6 +325,7 @@ export type Database = {
           job_id: string
           label: string
           min_score?: number | null
+          source_block_id?: string | null
           stage_key: string
           stage_order: number
           weight?: number | null
@@ -259,6 +338,7 @@ export type Database = {
           job_id?: string
           label?: string
           min_score?: number | null
+          source_block_id?: string | null
           stage_key?: string
           stage_order?: number
           weight?: number | null
@@ -269,6 +349,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_stages_source_block_id_fkey"
+            columns: ["source_block_id"]
+            isOneToOne: false
+            referencedRelation: "block_templates"
             referencedColumns: ["id"]
           },
         ]

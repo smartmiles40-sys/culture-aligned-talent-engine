@@ -1,13 +1,28 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { useJob, useUpdateJob } from "@/hooks/useJobs";
-import { useJobStages, useCreateStage, useUpdateStage, useDeleteStage, useAllStageQuestions, useCreateQuestion, useUpdateQuestion, useDeleteQuestion, DEFAULT_STAGES } from "@/hooks/useStages";
+import {
+  useJobStages, useUpdateStage, useDeleteStage,
+  useAllStageQuestions, useCreateQuestion, useUpdateQuestion, useDeleteQuestion,
+} from "@/hooks/useStages";
+import {
+  useBlockTemplates,
+  useAddBlockToJob,
+  useRestoreBlockQuestions,
+} from "@/hooks/useBlockTemplates";
 import { useCandidatesByJob } from "@/hooks/useCandidates";
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Copy, Check, Plus, X, Trash2, GripVertical, ChevronDown, ChevronUp, Settings } from "lucide-react";
+import { ArrowLeft, Copy, Check, Plus, X, Trash2, ChevronDown, ChevronUp, Settings, RotateCcw, Library } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 
 const AREAS = ["Comercial", "Operações", "Marketing", "Financeiro", "Relacionamento"];
 const FIELD_TYPES = [
@@ -27,18 +42,22 @@ export default function JobConfig() {
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [newQuestionText, setNewQuestionText] = useState("");
   const [newQuestionType, setNewQuestionType] = useState("textarea");
+  const [showBlockPicker, setShowBlockPicker] = useState(false);
+  const [deleteStageId, setDeleteStageId] = useState<string | null>(null);
 
   const { data: job, isLoading } = useJob(jobId);
   const { data: stages = [] } = useJobStages(jobId);
   const { data: questions = [] } = useAllStageQuestions(jobId);
   const { data: jobCandidates = [] } = useCandidatesByJob(jobId);
+  const { data: blockTemplates = [] } = useBlockTemplates();
   const updateJob = useUpdateJob();
-  const createStage = useCreateStage();
   const updateStage = useUpdateStage();
   const deleteStage = useDeleteStage();
   const createQuestion = useCreateQuestion();
   const updateQuestion = useUpdateQuestion();
   const deleteQuestion = useDeleteQuestion();
+  const addBlockToJob = useAddBlockToJob();
+  const restoreBlock = useRestoreBlockQuestions();
 
   const [title, setTitle] = useState("");
   const [area, setArea] = useState("");
@@ -89,17 +108,14 @@ export default function JobConfig() {
     } as any);
   };
 
-  const handleCreateDefaultStages = () => {
-    DEFAULT_STAGES.forEach((s, i) => {
-      createStage.mutate({
-        job_id: jobId,
-        stage_key: s.stage_key,
-        label: s.label,
-        stage_order: s.stage_order,
-        weight: s.weight,
-        is_enabled: true,
-      } as any);
+  const handleAddBlock = (block: any) => {
+    addBlockToJob.mutate({
+      jobId: jobId!,
+      block,
+      stageOrder: stages.length + 1,
+      weight: block.suggested_weight || 0,
     });
+    setShowBlockPicker(false);
   };
 
   const handleAddQuestion = (stageId: string) => {
@@ -117,6 +133,10 @@ export default function JobConfig() {
   };
 
   const totalWeight = stages.filter(s => s.is_enabled).reduce((sum, s) => sum + s.weight, 0);
+
+  // Block templates already added to this job (by source_block_id)
+  const usedBlockIds = stages.map((s: any) => s.source_block_id).filter(Boolean);
+  const availableBlocks = blockTemplates.filter(b => b.is_active);
 
   const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -201,31 +221,41 @@ export default function JobConfig() {
             </div>
           </div>
 
-          {/* Stages */}
+          {/* Blocks / Stages */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-foreground">Etapas e Perguntas</h2>
-              <span className={cn("text-sm font-bold", totalWeight === 100 ? "text-foreground" : "text-destructive")}>
-                Peso total: {totalWeight}%
-              </span>
+              <h2 className="font-display text-base font-bold text-foreground">Blocos da Vaga</h2>
+              <div className="flex items-center gap-3">
+                <span className={cn("text-sm font-bold", totalWeight === 100 ? "text-foreground" : "text-destructive")}>
+                  Peso total: {totalWeight}%
+                </span>
+                <button
+                  onClick={() => setShowBlockPicker(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-accent-foreground hover:bg-accent/90"
+                >
+                  <Library className="h-3.5 w-3.5" /> Adicionar Bloco
+                </button>
+              </div>
             </div>
 
             {stages.length === 0 ? (
               <div className="py-8 text-center">
-                <Settings className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">Nenhuma etapa configurada</p>
-                <button onClick={handleCreateDefaultStages} className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-                  Criar Etapas Padrão
+                <Library className="mx-auto h-8 w-8 text-muted-foreground/50" />
+                <p className="mt-2 text-sm text-muted-foreground">Nenhum bloco configurado</p>
+                <button onClick={() => setShowBlockPicker(true)} className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                  Adicionar Blocos da Biblioteca
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                {stages.map((stage) => {
+                {stages.map((stage, idx) => {
                   const stageQuestions = questions.filter(q => q.stage_id === stage.id);
                   const isExpanded = expandedStage === stage.id;
+                  const sourceBlockId = (stage as any).source_block_id;
                   return (
                     <div key={stage.id} className="rounded-lg border border-border bg-background">
                       <div className="flex items-center gap-3 p-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded bg-muted text-xs font-bold text-muted-foreground">{idx + 1}</span>
                         <button onClick={() => setExpandedStage(isExpanded ? null : stage.id)} className="text-muted-foreground">
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </button>
@@ -242,17 +272,25 @@ export default function JobConfig() {
                             checked={stage.is_enabled}
                             onChange={(e) => updateStage.mutate({ id: stage.id, is_enabled: e.target.checked })}
                             className="h-4 w-4 rounded border-input"
+                            title="Ativo"
                           />
                           <input
-                            type="number"
-                            min={0}
-                            max={100}
+                            type="number" min={0} max={100}
                             value={stage.weight}
                             onChange={(e) => updateStage.mutate({ id: stage.id, weight: Number(e.target.value) })}
                             className="h-8 w-16 rounded border border-input bg-background px-2 text-center text-xs"
                           />
                           <span className="text-xs text-muted-foreground">%</span>
-                          <button onClick={() => deleteStage.mutate(stage.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                          {sourceBlockId && (
+                            <button
+                              onClick={() => restoreBlock.mutate({ stageId: stage.id, blockId: sourceBlockId })}
+                              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              title="Restaurar bloco original"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button onClick={() => setDeleteStageId(stage.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -260,6 +298,28 @@ export default function JobConfig() {
 
                       {isExpanded && (
                         <div className="border-t border-border p-3">
+                          <div className="mb-2 flex items-center gap-2">
+                            <label className="flex items-center gap-1.5 text-xs text-foreground">
+                              <input
+                                type="checkbox"
+                                checked={stage.is_eliminatory}
+                                onChange={(e) => updateStage.mutate({ id: stage.id, is_eliminatory: e.target.checked })}
+                                className="h-3.5 w-3.5 rounded border-input"
+                              />
+                              Eliminatório
+                            </label>
+                            {stage.is_eliminatory && (
+                              <div className="flex items-center gap-1">
+                                <label className="text-[10px] text-muted-foreground">Score mín:</label>
+                                <input
+                                  type="number" min={0} max={100}
+                                  value={stage.min_score ?? ""}
+                                  onChange={(e) => updateStage.mutate({ id: stage.id, min_score: e.target.value ? Number(e.target.value) : null })}
+                                  className="h-6 w-14 rounded border border-input bg-background px-1 text-center text-[10px]"
+                                />
+                              </div>
+                            )}
+                          </div>
                           <div className="space-y-2">
                             {stageQuestions.map((q) => (
                               <div key={q.id} className="flex items-start gap-2 rounded-md bg-muted/50 p-2">
@@ -340,6 +400,71 @@ export default function JobConfig() {
           </div>
         </div>
       </div>
+
+      {/* Block Picker Dialog */}
+      <Dialog open={showBlockPicker} onOpenChange={setShowBlockPicker}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display">Adicionar Bloco da Biblioteca</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+            {availableBlocks.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Nenhum bloco disponível na biblioteca.</p>
+            ) : (
+              availableBlocks.map((block) => {
+                const alreadyUsed = usedBlockIds.includes(block.id);
+                return (
+                  <button
+                    key={block.id}
+                    disabled={alreadyUsed}
+                    onClick={() => handleAddBlock(block)}
+                    className={cn(
+                      "w-full rounded-lg border border-border p-4 text-left transition-all",
+                      alreadyUsed
+                        ? "cursor-not-allowed bg-muted/50 opacity-50"
+                        : "bg-card hover:border-accent hover:shadow-card-hover"
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">{block.name}</h3>
+                        {block.description && <p className="mt-0.5 text-xs text-muted-foreground">{block.description}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {block.is_eliminatory && (
+                          <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">Eliminatório</span>
+                        )}
+                        {block.suggested_weight > 0 && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{block.suggested_weight}%</span>
+                        )}
+                        {alreadyUsed && (
+                          <span className="rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">Já adicionado</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Stage Confirmation */}
+      <AlertDialog open={!!deleteStageId} onOpenChange={() => setDeleteStageId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover bloco da vaga?</AlertDialogTitle>
+            <AlertDialogDescription>As perguntas deste bloco serão removidas desta vaga. Respostas já coletadas não serão apagadas.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { if (deleteStageId) deleteStage.mutate(deleteStageId); setDeleteStageId(null); }}>
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

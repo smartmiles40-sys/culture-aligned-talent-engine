@@ -1,12 +1,16 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Briefcase, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Briefcase, Users, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/vagas", icon: Briefcase, label: "Vagas" },
   { to: "/candidatos", icon: Users, label: "Candidatos" },
+];
+
+const ADMIN_ITEMS = [
+  { to: "/configuracoes", icon: Settings, label: "Configurações" },
 ];
 
 export default function Sidebar() {
@@ -45,6 +49,30 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {role === "admin" && (
+          <>
+            <div className="my-2 border-t border-sidebar-border" />
+            {ADMIN_ITEMS.map((item) => {
+              const active = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-primary"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <div className="border-t border-sidebar-border p-4">
