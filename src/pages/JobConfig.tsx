@@ -85,7 +85,11 @@ export default function JobConfig() {
   if (isLoading) return <AppLayout><div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Carregando...</div></AppLayout>;
   if (!job) return <AppLayout><div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Vaga não encontrada.</div></AppLayout>;
 
-  const applicationLink = `${window.location.origin}/aplicar/${jobId}`;
+  const previewHost = window.location.hostname.includes("lovableproject.com") || window.location.hostname.includes("id-preview--");
+  const publicOrigin = previewHost
+    ? "https://culture-aligned-talent-engine.lovable.app"
+    : window.location.origin;
+  const applicationLink = `${publicOrigin}/aplicar/${jobId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(applicationLink);
