@@ -13,6 +13,8 @@ interface JobData {
   area: string;
   status: string;
   practical_case: string | null;
+  required_skills: string[] | null;
+  behavioral_profile: string | null;
 }
 
 interface StageData {
@@ -107,15 +109,16 @@ export default function PublicApplicationForm() {
   }
 
   // Build form steps: always personal + CV first, then stage-based steps
-  const formSteps: { type: "personal" | "cv" | "stage"; stageId?: string; label: string }[] = [
-    { type: "personal", label: "Etapa 1" },
-    { type: "cv", label: "Etapa 2" },
+  const formSteps: { type: "details" | "personal" | "cv" | "stage"; stageId?: string; label: string }[] = [
+    { type: "details", label: "Sobre a Vaga" },
+    { type: "personal", label: "Dados Pessoais" },
+    { type: "cv", label: "Currículo" },
   ];
 
   // Add stages that have questions (skip cv_upload and application since they're handled)
   const questionStages = stages.filter(s => !["application", "cv_upload"].includes(s.stage_key));
   questionStages.forEach((s, i) => {
-    formSteps.push({ type: "stage", stageId: s.id, label: `Etapa ${i + 3}` });
+    formSteps.push({ type: "stage", stageId: s.id, label: `Etapa ${i + 4}` });
   });
 
   const totalSteps = formSteps.length;
@@ -236,9 +239,55 @@ export default function PublicApplicationForm() {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+        {currentStep?.type === "details" && (
+          <div className="space-y-5">
+            <h2 className="font-display text-lg font-bold text-foreground">Sobre a Vaga</h2>
+            <p className="text-sm text-muted-foreground">Leia com atenção as informações abaixo antes de iniciar sua candidatura.</p>
+            
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold text-foreground">Cargo</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{job.title}</p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold text-foreground">Área</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{job.area}</p>
+              </div>
+
+              {job.required_skills && job.required_skills.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">Competências Desejadas</h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {job.required_skills.map((skill, i) => (
+                      <span key={i} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {job.practical_case && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">Caso Prático</h3>
+                  <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{job.practical_case}</p>
+                </div>
+              )}
+
+              {job.behavioral_profile && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">Perfil Comportamental</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{job.behavioral_profile}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {currentStep?.type === "personal" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Etapa 1</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Dados Pessoais</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Nome Completo *</label>
@@ -258,7 +307,7 @@ export default function PublicApplicationForm() {
 
         {currentStep?.type === "cv" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Etapa 2</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Currículo</h2>
             <p className="text-sm text-muted-foreground">Envie seu currículo em PDF ou Word.</p>
             <FileUpload
               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
