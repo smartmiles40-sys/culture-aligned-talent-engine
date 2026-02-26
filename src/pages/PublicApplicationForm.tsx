@@ -15,6 +15,8 @@ interface JobData {
   practical_case: string | null;
   required_skills: string[] | null;
   behavioral_profile: string | null;
+  intro_title: string | null;
+  intro_message: string | null;
 }
 
 interface StageData {
@@ -241,8 +243,8 @@ export default function PublicApplicationForm() {
       <div className="rounded-xl border border-border bg-card p-6 shadow-card">
         {currentStep?.type === "details" && (
           <div className="space-y-5">
-            <h2 className="font-display text-lg font-bold text-foreground">Sobre a Vaga</h2>
-            <p className="text-sm text-muted-foreground">Leia com atenção as informações abaixo antes de iniciar sua candidatura.</p>
+            <h2 className="font-display text-lg font-bold text-foreground">{job.intro_title || "Sobre a Vaga"}</h2>
+            <p className="whitespace-pre-line text-sm text-muted-foreground">{job.intro_message || "Leia com atenção as informações abaixo antes de iniciar sua candidatura."}</p>
             
             <div className="space-y-4">
               <div className="rounded-lg border border-border bg-muted/30 p-4">

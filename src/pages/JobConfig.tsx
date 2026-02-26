@@ -68,6 +68,8 @@ export default function JobConfig() {
   const [minCulture, setMinCulture] = useState(60);
   const [minTechnical, setMinTechnical] = useState(60);
   const [cultureRejection, setCultureRejection] = useState(true);
+  const [introTitle, setIntroTitle] = useState("Sobre a Vaga");
+  const [introMessage, setIntroMessage] = useState("Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
   const [initialized, setInitialized] = useState(false);
 
   if (job && !initialized) {
@@ -79,6 +81,8 @@ export default function JobConfig() {
     setMinCulture(job.min_culture_score);
     setMinTechnical(job.min_technical_score);
     setCultureRejection(job.culture_rejection_enabled);
+    setIntroTitle((job as any).intro_title || "Sobre a Vaga");
+    setIntroMessage((job as any).intro_message || "Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
     setInitialized(true);
   }
 
@@ -109,6 +113,8 @@ export default function JobConfig() {
       min_culture_score: minCulture,
       min_technical_score: minTechnical,
       culture_rejection_enabled: cultureRejection,
+      intro_title: introTitle || "Sobre a Vaga",
+      intro_message: introMessage || "",
     } as any);
   };
 
@@ -183,6 +189,27 @@ export default function JobConfig() {
         </div>
 
         <div className="space-y-6">
+          {/* Intro Step Config */}
+          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+            <h2 className="mb-4 font-display text-base font-bold text-foreground">Etapa Inicial (Detalhes da Vaga)</h2>
+            <p className="mb-3 text-xs text-muted-foreground">Configure o título e a mensagem que o candidato verá antes de iniciar o preenchimento.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Título da Etapa</label>
+                <input value={introTitle} onChange={(e) => setIntroTitle(e.target.value)} className={inputClass} placeholder="Ex: Sobre a Vaga" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Mensagem / Descrição</label>
+                <textarea
+                  value={introMessage}
+                  onChange={(e) => setIntroMessage(e.target.value)}
+                  className="min-h-[100px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Descreva os detalhes da vaga, requisitos, benefícios, etc."
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Basic info */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <h2 className="mb-4 font-display text-base font-bold text-foreground">Informações Básicas</h2>
