@@ -126,7 +126,7 @@ Considere:
       };
     }
 
-    // Save analysis to database
+    // Save analysis to database and auto-create evaluation
     if (candidateId) {
       const { error: updateError } = await supabase
         .from("candidates")
@@ -134,6 +134,41 @@ Considere:
         .eq("id", candidateId);
       if (updateError) {
         console.error("Failed to save cv_analysis:", updateError);
+      }
+
+      // Find the candidate's job and the cv_upload stage to auto-score
+      const { data: candidate } = await supabase
+        .from("candidates")
+        .select("job_id")
+        .eq("id", candidateId)
+        .single();
+
+      if (candidate?.job_id) {
+        const { data: cvStage } = await supabase
+          .from("job_stages")
+          .select("id")
+          .eq("job_id", candidate.job_id)
+          .eq("stage_key", "cv_upload")
+          .single();
+
+        if (cvStage) {
+          // Delete any existing AI evaluation (no evaluator) then insert fresh
+          await supabase
+            .from("candidate_evaluations")
+            .delete()
+            .eq("candidate_id", candidateId)
+            .eq("stage_id", cvStage.id)
+            .is("evaluator_id", null);
+
+          await supabase
+            .from("candidate_evaluations")
+            .insert({
+              candidate_id: candidateId,
+              stage_id: cvStage.id,
+              score: analysis.score ?? 0,
+              notes: `Análise IA: ${analysis.recommendation || ""} — ${analysis.summary || ""}`,
+            });
+        }
       }
     }
 
