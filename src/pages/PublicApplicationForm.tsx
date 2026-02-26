@@ -204,6 +204,11 @@ export default function PublicApplicationForm() {
         }).catch(() => {});
       }
 
+      // Trigger AI scoring of responses in background
+      supabase.functions.invoke("score-candidate-responses", {
+        body: { candidateId, jobId },
+      }).catch(() => {});
+
       setSubmitted(true);
     } catch (e: any) {
       toast({ title: "Erro ao enviar", description: e.message, variant: "destructive" });
