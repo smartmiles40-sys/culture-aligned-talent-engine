@@ -87,7 +87,9 @@ serve(async (req) => {
 
       if (!qaPairs) continue;
 
-      const prompt = `Você é um especialista em recrutamento. Avalie as respostas do candidato para a etapa "${stage.label}" da vaga "${job.title}" (área: ${job.area || "N/A"}).
+      const prompt = `Você é um avaliador EXTREMAMENTE RIGOROSO de candidatos. Sua função é proteger a empresa de contratações ruins.
+
+Avalie as respostas do candidato para a etapa "${stage.label}" da vaga "${job.title}" (área: ${job.area || "N/A"}).
 
 Competências desejadas: ${job.required_skills?.join(", ") || "N/A"}
 Perfil comportamental: ${job.behavioral_profile || "N/A"}
@@ -95,7 +97,22 @@ Perfil comportamental: ${job.behavioral_profile || "N/A"}
 ## Respostas do Candidato:
 ${qaPairs}
 
-Avalie a qualidade, profundidade e relevância das respostas. Use a tool score_stage para retornar a nota.`;
+## CRITÉRIOS RIGOROSOS DE PONTUAÇÃO:
+- 0-20: Respostas vazias, sem sentido, aleatórias, copiadas, ou completamente irrelevantes
+- 21-40: Respostas genéricas, superficiais, sem exemplos concretos, sem conexão com a vaga
+- 41-60: Respostas razoáveis mas sem profundidade, poucos exemplos, conexão fraca com competências
+- 61-75: Respostas boas com exemplos, demonstra conhecimento relevante
+- 76-90: Respostas excelentes, exemplos concretos, forte alinhamento com competências e cultura
+- 91-100: Respostas excepcionais, experiência comprovada, fit cultural perfeito
+
+## SINAIS DE ALERTA (score deve ser BAIXO, 0-30):
+- Respostas de uma só palavra ou muito curtas sem substância
+- Texto aleatório, sem sentido ou claramente inventado
+- Respostas que não respondem a pergunta feita
+- Contradições óbvias
+- Respostas genéricas que poderiam ser usadas para qualquer vaga
+
+SEJA HONESTO E RIGOROSO. NÃO infle notas. Use a tool score_stage para retornar a nota.`;
 
       const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
