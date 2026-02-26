@@ -5,7 +5,9 @@ import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -17,10 +19,12 @@ export default function CandidateDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [showDelete, setShowDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [analyzingCv, setAnalyzingCv] = useState(false);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
@@ -91,6 +95,31 @@ export default function CandidateDetail() {
     navigate("/candidatos");
   };
 
+  const handleAnalyzeCv = async () => {
+    if (!candidate.cv_url || !job) return;
+    setAnalyzingCv(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-cv", {
+        body: {
+          cvPath: candidate.cv_url,
+          candidateId: candidate.id,
+          jobTitle: job.title,
+          jobArea: job.area,
+          requiredSkills: job.required_skills,
+          behavioralProfile: job.behavioral_profile,
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Análise concluída", description: `Score: ${data?.score ?? "—"} — ${data?.recommendation ?? ""}` });
+      // Refetch candidate data
+      window.location.reload();
+    } catch (e: any) {
+      toast({ title: "Erro na análise", description: e.message || "Erro ao analisar currículo", variant: "destructive" });
+    } finally {
+      setAnalyzingCv(false);
+    }
+  };
+
   const inputClass = "h-9 w-20 rounded-lg border border-input bg-background px-2 text-center text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
   return (
@@ -112,6 +141,10 @@ export default function CandidateDetail() {
               <>
                 <h1 className="font-display text-2xl font-bold text-foreground">{candidate.name}</h1>
                 <p className="text-sm text-muted-foreground">{candidate.email} • {job?.title || "—"}</p>
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  Candidatou-se em {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
               </>
             )}
           </div>
@@ -181,8 +214,21 @@ export default function CandidateDetail() {
         {/* CV info */}
         {candidate.cv_url && (
           <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-card">
-            <h2 className="mb-2 font-display text-sm font-bold text-foreground">Currículo</h2>
-            <a href={candidate.cv_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-info hover:underline">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-sm font-bold text-foreground">Currículo</h2>
+              <button
+                onClick={handleAnalyzeCv}
+                disabled={analyzingCv}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {analyzingCv ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {analyzingCv ? "Analisando..." : "Analisar CV"}
+              </button>
+            </div>
+            <a 
+              href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/authenticated/cvs/${candidate.cv_url}`}
+              target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 text-sm text-info hover:underline"
+            >
               <ExternalLink className="h-4 w-4" /> Ver currículo
             </a>
           </div>
