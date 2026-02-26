@@ -5,7 +5,7 @@ import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ export default function CandidateDetail() {
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [analyzingCv, setAnalyzingCv] = useState(false);
+  const [cvActionLoading, setCvActionLoading] = useState(false);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
@@ -117,6 +118,26 @@ export default function CandidateDetail() {
       toast({ title: "Erro na análise", description: e.message || "Erro ao analisar currículo", variant: "destructive" });
     } finally {
       setAnalyzingCv(false);
+    }
+  };
+
+  const handleCvAction = async (mode: "view" | "download") => {
+    if (!candidate.cv_url) return;
+
+    setCvActionLoading(true);
+    try {
+      const fileName = candidate.cv_url.split("/").pop() || "curriculo.pdf";
+      const { data, error } = await supabase.storage
+        .from("cvs")
+        .createSignedUrl(candidate.cv_url, 60 * 10, mode === "download" ? { download: fileName } : undefined);
+
+      if (error || !data?.signedUrl) throw error || new Error("Não foi possível gerar o link do currículo");
+
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({ title: "Erro ao abrir currículo", description: e.message || "Tente novamente", variant: "destructive" });
+    } finally {
+      setCvActionLoading(false);
     }
   };
 
@@ -214,23 +235,35 @@ export default function CandidateDetail() {
         {/* CV info */}
         {candidate.cv_url && (
           <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-card">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-sm font-bold text-foreground">Currículo</h2>
-              <button
-                onClick={handleAnalyzeCv}
-                disabled={analyzingCv}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {analyzingCv ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                {analyzingCv ? "Analisando..." : "Analisar CV"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleCvAction("view")}
+                  disabled={cvActionLoading}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/80 disabled:opacity-50"
+                >
+                  {cvActionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                  Ver currículo
+                </button>
+                <button
+                  onClick={() => handleCvAction("download")}
+                  disabled={cvActionLoading}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Baixar
+                </button>
+                <button
+                  onClick={handleAnalyzeCv}
+                  disabled={analyzingCv}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {analyzingCv ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  {analyzingCv ? "Analisando..." : "Analisar CV"}
+                </button>
+              </div>
             </div>
-            <a 
-              href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/authenticated/cvs/${candidate.cv_url}`}
-              target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 text-sm text-info hover:underline"
-            >
-              <ExternalLink className="h-4 w-4" /> Ver currículo
-            </a>
           </div>
         )}
 
