@@ -112,6 +112,11 @@ ${qaPairs}
 - Contradições óbvias
 - Respostas genéricas que poderiam ser usadas para qualquer vaga
 
+## QUALIDADE DA ESCRITA (penalizar fortemente):
+- Erros graves de português (ortografia, concordância, regência) devem REDUZIR o score em 10-20 pontos
+- Texto mal estruturado, sem pontuação ou com frases incompreensíveis indica baixa capacidade de comunicação
+- Candidato que não consegue se expressar por escrito de forma clara é um risco para a empresa
+
 SEJA HONESTO E RIGOROSO. NÃO infle notas. Use a tool score_stage para retornar a nota.`;
 
       const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
