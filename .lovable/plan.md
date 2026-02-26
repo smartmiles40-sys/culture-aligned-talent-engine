@@ -1,45 +1,43 @@
 
 
-## Problem
+## Problems Identified
 
-Two issues prevent the CV analysis from working:
+1. **CV Analysis is wrong**: The file uploaded (`800_Calorias_sem_restriA_A_o.pdf`) is a photo, not a CV. The AI hallucinated a score of 85 and fabricated strengths/weaknesses. This needs to be cleared.
 
-1. **Parameter mismatch**: The form sends `fileName` but the edge function expects `cvPath`. The function also needs `jobArea`, `requiredSkills`, and `behavioralProfile` which are not being passed.
-
-2. **Results not saved**: The `analyze-cv` edge function returns the analysis JSON but never saves it back to the `candidates.cv_analysis` column in the database.
+2. **Stage scores are empty**: The candidate submitted text responses for Blocos C, D, and F, but no evaluations were created for those stages. Currently, scores are only filled manually by recruiters or by the CV analysis for Bloco B. There is no automatic AI scoring for the other stages based on candidate responses.
 
 ## Plan
 
-### 1. Fix PublicApplicationForm.tsx - correct parameter names and pass full job data
+### 1. Clear the invalid CV analysis for this candidate
 
-Update the `analyze-cv` invocation (line ~195-197) to pass the correct parameters:
+Run a database update to set `cv_analysis` to null and delete the incorrect Bloco B evaluation for this candidate, since the uploaded file was not a real CV.
 
-```typescript
-supabase.functions.invoke("analyze-cv", {
-  body: {
-    cvPath: formData.__cv_url,
-    candidateId,
-    jobTitle: job.title,
-    jobArea: job.area,
-    requiredSkills: job.required_skills,
-    behavioralProfile: job.behavioral_profile,
-  },
-}).catch(() => {});
-```
+### 2. Add AI auto-scoring of candidate responses on submission
 
-### 2. Update analyze-cv edge function - save results to database
+Create a new edge function `score-candidate-responses` that:
+- Receives `candidateId` and `jobId`
+- Fetches all candidate responses grouped by stage
+- For each scorable stage (weight > 0), sends the questions + responses to the AI gateway
+- AI returns a score (0-100) and brief justification
+- Inserts evaluations into `candidate_evaluations` for each stage
 
-After getting the AI analysis, add a step to update `candidates.cv_analysis` with the result using the service role client:
+### 3. Call the new function from PublicApplicationForm after submission
 
-```typescript
-// After parsing analysis successfully
-await supabase.from("candidates").update({ cv_analysis: analysis }).eq("id", candidateId);
-```
+After the candidate record is created and responses are saved, invoke `score-candidate-responses` (fire-and-forget, same as `analyze-cv`).
 
-Also extract `candidateId` from the request body (it's already being sent but not used).
+### 4. Update analyze-cv to validate the file is actually a CV
 
-### Technical details
+Add a check in the AI prompt to detect if the uploaded file is not a real CV and return a low score with an appropriate warning instead of hallucinating.
 
-- The edge function already has `supabase` initialized with `SUPABASE_SERVICE_ROLE_KEY`, so it can bypass RLS to update the candidate row.
-- The `cv_analysis` column is `jsonb` type, matching the analysis object structure.
+### Technical Details
+
+**New edge function `score-candidate-responses/index.ts`:**
+- Uses Lovable AI (gemini-3-flash-preview) to score each stage
+- System prompt instructs AI to evaluate responses against the job requirements
+- Uses tool calling to extract structured `{ score: number, justification: string }`
+- Inserts one `candidate_evaluations` row per stage with `evaluator_id = null` (AI)
+- Deletes any existing AI evaluations first (same pattern as analyze-cv)
+
+**PublicApplicationForm.tsx changes:**
+- After successful submission, call `score-candidate-responses` with `candidateId` and `jobId`
 
