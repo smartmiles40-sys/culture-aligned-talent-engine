@@ -44,6 +44,15 @@ serve(async (req) => {
 
     const prompt = `Você é um especialista em recrutamento e seleção. Analise o currículo abaixo e compare com a descrição da vaga.
 
+ATENÇÃO CRÍTICA: Primeiro, verifique se o conteúdo abaixo é realmente um currículo (CV/resume). Se o conteúdo NÃO for um currículo real (por exemplo, se for uma imagem, foto, receita, documento não relacionado, ou texto sem sentido), você DEVE retornar:
+{
+  "score": 0,
+  "summary": "O arquivo enviado não é um currículo válido.",
+  "strengths": [],
+  "weaknesses": ["Arquivo enviado não é um currículo"],
+  "recommendation": "Não Recomendado"
+}
+
 ## Vaga
 - **Título:** ${jobTitle}
 - **Área:** ${jobArea || "Não especificada"}
@@ -168,6 +177,9 @@ Considere:
               score: analysis.score ?? 0,
               notes: `Análise IA: ${analysis.recommendation || ""} — ${analysis.summary || ""}`,
             });
+
+          // Recalculate final score
+          await supabase.rpc("calculate_candidate_score", { p_candidate_id: candidateId });
         }
       }
     }
