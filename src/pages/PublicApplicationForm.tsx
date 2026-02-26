@@ -162,26 +162,27 @@ export default function PublicApplicationForm() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      // Create candidate
-      const { data: candidate, error: candidateError } = await supabase
+      const candidateId = crypto.randomUUID();
+
+      // Create candidate (no .select() needed — we already have the ID)
+      const { error: candidateError } = await supabase
         .from("candidates")
         .insert([{
+          id: candidateId,
           job_id: jobId,
           name: formData.name || "Sem nome",
           email: formData.email || "sem@email.com",
           phone: formData.phone || null,
           cv_url: formData.__cv_url || null,
           status: "in_progress",
-        }])
-        .select()
-        .single();
+        }]);
       if (candidateError) throw candidateError;
 
       // Save responses
       const responseEntries = Object.entries(formData)
         .filter(([key]) => key.startsWith("q_"))
         .map(([key, value]) => ({
-          candidate_id: candidate.id,
+          candidate_id: candidateId,
           question_id: key.replace("q_", ""),
           response_value: value,
         }));
@@ -192,7 +193,7 @@ export default function PublicApplicationForm() {
       // Trigger CV analysis in background
       if (formData.__cv_url) {
         supabase.functions.invoke("analyze-cv", {
-          body: { fileName: formData.__cv_url, candidateId: candidate.id, jobTitle: job.title },
+          body: { fileName: formData.__cv_url, candidateId, jobTitle: job.title },
         }).catch(() => {});
       }
 
