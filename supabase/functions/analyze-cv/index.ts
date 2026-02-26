@@ -42,16 +42,21 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const prompt = `Você é um especialista em recrutamento e seleção. Analise o currículo abaixo e compare com a descrição da vaga.
+    const prompt = `Você é um avaliador EXTREMAMENTE RIGOROSO e CRITERIOSO de currículos para recrutamento. Sua função é proteger a empresa de contratações ruins.
 
-ATENÇÃO CRÍTICA: Primeiro, verifique se o conteúdo abaixo é realmente um currículo (CV/resume). Se o conteúdo NÃO for um currículo real (por exemplo, se for uma imagem, foto, receita, documento não relacionado, ou texto sem sentido), você DEVE retornar:
-{
-  "score": 0,
-  "summary": "O arquivo enviado não é um currículo válido.",
-  "strengths": [],
-  "weaknesses": ["Arquivo enviado não é um currículo"],
-  "recommendation": "Não Recomendado"
-}
+## REGRAS CRÍTICAS DE VALIDAÇÃO (aplicar ANTES de qualquer análise):
+
+1. **Verificação de documento**: Se o conteúdo NÃO for um currículo real (foto, receita, documento aleatório, texto sem sentido, conteúdo binário/ilegível), retorne score 0 e recommendation "Não Recomendado".
+
+2. **Verificação de relevância para a vaga**: Se o currículo é real MAS a experiência e formação do candidato NÃO TÊM RELAÇÃO com a vaga anunciada, o score DEVE ser BAIXO (0-30). Um programador se candidatando para vaga de vendas, ou um cozinheiro para vaga de TI, DEVE receber score baixo.
+
+3. **Critérios de pontuação RIGOROSOS**:
+   - 0-20: Arquivo inválido, ou experiência completamente irrelevante para a vaga
+   - 21-40: Pouca relevância, experiência tangencial, falta a maioria das competências
+   - 41-60: Alguma relevância, mas faltam competências importantes ou experiência é superficial
+   - 61-75: Boa aderência, possui a maioria das competências, experiência relevante
+   - 76-90: Forte aderência, experiência sólida na área, quase todas as competências
+   - 91-100: Excepcional, candidato ideal com todas as competências e experiência extensa
 
 ## Vaga
 - **Título:** ${jobTitle}
@@ -63,21 +68,18 @@ ATENÇÃO CRÍTICA: Primeiro, verifique se o conteúdo abaixo é realmente um cu
 ${cvText.substring(0, 8000)}
 
 ## Instruções
-Analise a compatibilidade do candidato com a vaga e retorne EXATAMENTE no seguinte formato JSON (sem markdown, sem código):
+SEJA RIGOROSO. NÃO infle notas. Compare ESTRITAMENTE a experiência e competências do candidato com os requisitos da vaga.
+
+Retorne EXATAMENTE no seguinte formato JSON (sem markdown, sem código):
 {
-  "score": <número de 0 a 100>,
-  "summary": "<resumo de 2-3 frases sobre a compatibilidade>",
-  "strengths": ["<ponto forte 1>", "<ponto forte 2>", "<ponto forte 3>"],
-  "weaknesses": ["<ponto fraco ou gap 1>", "<ponto fraco ou gap 2>"],
+  "score": <número de 0 a 100 - USE A ESCALA ACIMA RIGOROSAMENTE>,
+  "summary": "<resumo de 2-3 frases sobre a compatibilidade REAL, seja honesto sobre gaps>",
+  "strengths": ["<ponto forte REAL e verificável no currículo>"],
+  "weaknesses": ["<gap ou deficiência REAL em relação à vaga>"],
   "recommendation": "<Recomendado | Com Ressalvas | Não Recomendado>"
 }
 
-Considere:
-- Experiência relevante para a área
-- Competências técnicas mencionadas vs. requeridas
-- Formação acadêmica
-- Perfil comportamental implícito
-- Aderência geral à vaga`;
+ATENÇÃO: Se não houver match claro entre o perfil do candidato e a vaga, o score DEVE ser baixo. Não invente qualidades que não existem no currículo.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
