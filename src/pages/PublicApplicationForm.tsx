@@ -113,7 +113,7 @@ export default function PublicApplicationForm() {
   ];
 
   // Add stages that have questions (skip cv_upload and application since they're handled)
-  const questionStages = stages.filter(s => !["application", "cv_upload"].includes(s.stage_key) && questions.some(q => q.stage_id === s.id));
+  const questionStages = stages.filter(s => !["application", "cv_upload"].includes(s.stage_key));
   questionStages.forEach((s, i) => {
     formSteps.push({ type: "stage", stageId: s.id, label: `Etapa ${i + 3}` });
   });
@@ -129,7 +129,11 @@ export default function PublicApplicationForm() {
     setAnalyzing(true);
     setCvError(null);
     try {
-      const fileName = `${jobId}/${Date.now()}-${cvFile.name}`;
+      // Sanitize filename to avoid invalid key errors with special characters
+      const sanitizedName = cvFile.name
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+        .replace(/[^a-zA-Z0-9._-]/g, "_"); // replace special chars
+      const fileName = `${jobId}/${Date.now()}-${sanitizedName}`;
       const { error: uploadError } = await supabase.storage.from("cvs").upload(fileName, cvFile);
       if (uploadError) throw new Error("Erro ao enviar currículo: " + uploadError.message);
       setFormData(prev => ({ ...prev, __cv_url: fileName }));
