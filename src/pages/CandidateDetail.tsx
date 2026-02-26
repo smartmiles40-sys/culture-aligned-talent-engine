@@ -188,6 +188,56 @@ export default function CandidateDetail() {
           </div>
         )}
 
+        {/* CV Analysis */}
+        {candidate.cv_analysis && typeof candidate.cv_analysis === "object" && (
+          <div className="mb-6 rounded-xl border border-border bg-card p-5 shadow-card">
+            <h2 className="mb-3 font-display text-base font-bold text-foreground">Análise de CV (IA)</h2>
+            <div className="mb-3 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 px-3 py-1.5 text-center">
+                <div className="font-display text-2xl font-bold text-foreground">{(candidate.cv_analysis as any).score ?? "—"}</div>
+                <div className="text-xs text-muted-foreground">Score</div>
+              </div>
+              <span className={cn(
+                "rounded-md px-2 py-1 text-xs font-semibold",
+                (candidate.cv_analysis as any).recommendation === "Recomendado" ? "bg-success/10 text-foreground" :
+                (candidate.cv_analysis as any).recommendation === "Não Recomendado" ? "bg-destructive/10 text-destructive" :
+                "bg-warning/10 text-foreground"
+              )}>
+                {(candidate.cv_analysis as any).recommendation}
+              </span>
+            </div>
+            {(candidate.cv_analysis as any).summary && (
+              <p className="mb-3 text-sm text-muted-foreground">{(candidate.cv_analysis as any).summary}</p>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {(candidate.cv_analysis as any).strengths?.length > 0 && (
+                <div>
+                  <h3 className="mb-1 text-xs font-semibold text-foreground">Pontos Fortes</h3>
+                  <ul className="space-y-1">
+                    {(candidate.cv_analysis as any).strengths.map((s: string, i: number) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <span className="mt-0.5 text-success">✓</span> {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {(candidate.cv_analysis as any).weaknesses?.length > 0 && (
+                <div>
+                  <h3 className="mb-1 text-xs font-semibold text-foreground">Pontos de Atenção</h3>
+                  <ul className="space-y-1">
+                    {(candidate.cv_analysis as any).weaknesses.map((w: string, i: number) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <span className="mt-0.5 text-warning">!</span> {w}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Scores editing */}
         <div className="rounded-xl border border-border bg-card p-5 shadow-card">
           <h2 className="mb-4 font-display text-base font-bold text-foreground">Notas por Etapa</h2>
