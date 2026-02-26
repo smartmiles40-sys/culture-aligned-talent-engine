@@ -1,30 +1,45 @@
 
 
-## Current State
+## Problem
 
-**Dados Pessoais step** has these fields:
-- **Nome Completo** — marked with `*`, validated in button disabled logic ✅
-- **Email** — marked with `*`, validated in button disabled logic ✅  
-- **Telefone** — NOT marked as required, NOT validated ❌
+Two issues prevent the CV analysis from working:
 
-The "Próximo" button only checks `!formData.name || !formData.email` — phone is optional.
+1. **Parameter mismatch**: The form sends `fileName` but the edge function expects `cvPath`. The function also needs `jobArea`, `requiredSkills`, and `behavioralProfile` which are not being passed.
 
-**Stage questions** — each question has `is_required` from the database, the label shows `*` but there's NO validation preventing the user from advancing without filling required questions.
-
-**CV step** — validated (button disabled if no file) ✅
+2. **Results not saved**: The `analyze-cv` edge function returns the analysis JSON but never saves it back to the `candidates.cv_analysis` column in the database.
 
 ## Plan
 
-### 1. Make phone required on personal step
-- Add `*` to the Telefone label
-- Add `!formData.phone` to the disabled condition on the "Próximo" button for the personal step
+### 1. Fix PublicApplicationForm.tsx - correct parameter names and pass full job data
 
-### 2. Add required question validation for stage steps
-- Before advancing from a stage step, check all questions with `is_required === true` have non-empty values in `formData`
-- Add validation state to show error messages on empty required fields
-- Disable the "Próximo" / "Enviar" button when required stage questions are not filled
+Update the `analyze-cv` invocation (line ~195-197) to pass the correct parameters:
 
-### 3. Add validation before final submit
-- On `handleSubmit`, verify all required stage questions are answered before proceeding
-- Show toast error if any required field is missing
+```typescript
+supabase.functions.invoke("analyze-cv", {
+  body: {
+    cvPath: formData.__cv_url,
+    candidateId,
+    jobTitle: job.title,
+    jobArea: job.area,
+    requiredSkills: job.required_skills,
+    behavioralProfile: job.behavioral_profile,
+  },
+}).catch(() => {});
+```
+
+### 2. Update analyze-cv edge function - save results to database
+
+After getting the AI analysis, add a step to update `candidates.cv_analysis` with the result using the service role client:
+
+```typescript
+// After parsing analysis successfully
+await supabase.from("candidates").update({ cv_analysis: analysis }).eq("id", candidateId);
+```
+
+Also extract `candidateId` from the request body (it's already being sent but not used).
+
+### Technical details
+
+- The edge function already has `supabase` initialized with `SUPABASE_SERVICE_ROLE_KEY`, so it can bypass RLS to update the candidate row.
+- The `cv_analysis` column is `jsonb` type, matching the analysis object structure.
 
