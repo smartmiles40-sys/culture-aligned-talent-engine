@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { cvPath, jobTitle, jobArea, requiredSkills, behavioralProfile } = await req.json();
+    const { cvPath, candidateId, jobTitle, jobArea, requiredSkills, behavioralProfile } = await req.json();
 
     if (!cvPath || !jobTitle) {
       return new Response(JSON.stringify({ error: "cvPath and jobTitle are required" }), {
@@ -124,6 +124,17 @@ Considere:
         weaknesses: [],
         recommendation: "Com Ressalvas",
       };
+    }
+
+    // Save analysis to database
+    if (candidateId) {
+      const { error: updateError } = await supabase
+        .from("candidates")
+        .update({ cv_analysis: analysis })
+        .eq("id", candidateId);
+      if (updateError) {
+        console.error("Failed to save cv_analysis:", updateError);
+      }
     }
 
     return new Response(JSON.stringify(analysis), {

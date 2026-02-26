@@ -193,7 +193,14 @@ export default function PublicApplicationForm() {
       // Trigger CV analysis in background
       if (formData.__cv_url) {
         supabase.functions.invoke("analyze-cv", {
-          body: { fileName: formData.__cv_url, candidateId, jobTitle: job.title },
+          body: {
+            cvPath: formData.__cv_url,
+            candidateId,
+            jobTitle: job.title,
+            jobArea: job.area,
+            requiredSkills: job.required_skills,
+            behavioralProfile: job.behavioral_profile,
+          },
         }).catch(() => {});
       }
 
