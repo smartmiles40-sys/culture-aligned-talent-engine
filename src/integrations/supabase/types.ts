@@ -368,6 +368,8 @@ export type Database = {
           created_by: string | null
           culture_rejection_enabled: boolean | null
           id: string
+          intro_message: string | null
+          intro_title: string | null
           min_culture_score: number | null
           min_technical_score: number | null
           practical_case: string | null
@@ -383,6 +385,8 @@ export type Database = {
           created_by?: string | null
           culture_rejection_enabled?: boolean | null
           id?: string
+          intro_message?: string | null
+          intro_title?: string | null
           min_culture_score?: number | null
           min_technical_score?: number | null
           practical_case?: string | null
@@ -398,6 +402,8 @@ export type Database = {
           created_by?: string | null
           culture_rejection_enabled?: boolean | null
           id?: string
+          intro_message?: string | null
+          intro_title?: string | null
           min_culture_score?: number | null
           min_technical_score?: number | null
           practical_case?: string | null
