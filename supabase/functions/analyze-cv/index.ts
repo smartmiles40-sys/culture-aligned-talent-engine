@@ -49,52 +49,61 @@ serve(async (req) => {
 1. **Verificação de documento**: Se o conteúdo NÃO for um currículo real (foto, receita, documento aleatório, texto sem sentido, conteúdo binário/ilegível, ou texto que não contém informações profissionais como nome, experiência, formação), retorne score 0 e recommendation "Não Recomendado".
 
 2. **VERIFICAÇÃO DE ÁREA/RELEVÂNCIA (REGRA MAIS IMPORTANTE)**:
-   - Compare a ÁREA DE ATUAÇÃO do candidato com a ÁREA DA VAGA.
-   - Se o candidato tem experiência PREDOMINANTEMENTE em uma área DIFERENTE da vaga (ex: currículo de Marketing para vaga de Vendas, currículo de TI para vaga de RH, currículo de Operações para vaga de Comercial), o score MÁXIMO deve ser 40.
+   - Compare a ÁREA DE ATUAÇÃO REAL do candidato com a ÁREA DA VAGA.
+   - Liste mentalmente: quais empresas o candidato trabalhou? quais cargos ocupou? O que fez no dia a dia?
+   - Se o candidato tem experiência PREDOMINANTEMENTE em uma área DIFERENTE da vaga (ex: currículo de Marketing para vaga de Vendas, currículo de TI para vaga de RH), o score MÁXIMO deve ser 40.
    - NÃO INVENTE conexões que não existem. Ter "comunicação" ou "trabalho em equipe" NÃO torna um profissional de marketing adequado para vendas.
    - Experiência em "vendas" mencionada vagamente em um currículo de outra área NÃO conta como experiência real em vendas.
-   - ANALISE O HISTÓRICO REAL: onde a pessoa REALMENTE trabalhou, quais cargos REALMENTE ocupou, o que REALMENTE fez no dia a dia.
 
 3. **Verificação de competências obrigatórias**: 
-   - Para cada competência listada como obrigatória, verifique se há EVIDÊNCIA CONCRETA no currículo.
+   - Para CADA competência listada abaixo, verifique se há EVIDÊNCIA CONCRETA no currículo (cargo, projeto, resultado).
    - Se mais de 50% das competências obrigatórias NÃO estão evidenciadas, o score máximo deve ser 50.
+   - Competências obrigatórias da vaga: ${requiredSkills?.join(", ") || "Não especificadas"}
 
-4. **Critérios de pontuação RIGOROSOS**:
+4. **QUALIDADE DA ESCRITA DO CURRÍCULO**:
+   - Erros graves de português (ortografia, concordância, regência) devem REDUZIR o score em 10-15 pontos.
+   - Currículo mal formatado, com frases incoerentes ou sem estrutura profissional indica baixa capacidade de comunicação.
+   - Mencione os erros encontrados na lista de weaknesses.
+
+5. **Critérios de pontuação RIGOROSOS**:
    - 0-10: Arquivo inválido, não é currículo
    - 11-25: Experiência em área COMPLETAMENTE diferente da vaga, sem nenhuma conexão real
-   - 26-40: Área tangencialmente relacionada, mas experiência principal é outra. Faltam competências fundamentais
-   - 41-55: Alguma experiência na área, mas faltam competências importantes ou experiência é rasa
+   - 26-40: Área tangencialmente relacionada, mas experiência principal é outra
+   - 41-55: Alguma experiência na área, mas faltam competências importantes
    - 56-70: Experiência relevante na área, possui parte das competências, mas com gaps
-   - 71-85: Boa aderência, experiência sólida na mesma área, maioria das competências presentes
-   - 86-100: Excepcional, candidato ideal com experiência extensa NA MESMA ÁREA e todas as competências
+   - 71-85: Boa aderência, experiência sólida na mesma área, maioria das competências
+   - 86-100: Excepcional, candidato ideal com experiência extensa NA MESMA ÁREA
 
-## Vaga
+## DESCRIÇÃO COMPLETA DA VAGA (compare CADA item com o currículo):
 - **Título:** ${jobTitle}
 - **Área:** ${jobArea || "Não especificada"}
 - **Competências obrigatórias:** ${requiredSkills?.join(", ") || "Não especificadas"}
 - **Perfil comportamental desejado:** ${behavioralProfile || "Não especificado"}
 
-## Currículo do Candidato
+## Currículo do Candidato (analise LITERALMENTE o que está escrito):
 ${cvText.substring(0, 8000)}
 
-## Instruções
-SEJA EXTREMAMENTE RIGOROSO. Analise o currículo LITERALMENTE — cite apenas fatos que REALMENTE constam no documento.
-NÃO INVENTE experiências, cargos ou competências que não estejam escritos no currículo.
-Se o currículo é de uma área diferente da vaga, DIGA ISSO CLARAMENTE e dê score BAIXO.
+## CHECKLIST OBRIGATÓRIO (responda mentalmente antes de dar o score):
+1. Qual é a área REAL de atuação do candidato? (baseado nos cargos e empresas)
+2. Essa área é a MESMA da vaga? Se não, score máximo = 40.
+3. Quantas das competências obrigatórias o candidato REALMENTE demonstra? (cite evidências)
+4. O currículo tem erros de português? Se sim, penalize 10-15 pontos.
+5. As experiências citadas são RELEVANTES para o dia a dia da vaga?
 
 Retorne EXATAMENTE no seguinte formato JSON (sem markdown, sem código):
 {
-  "score": <número de 0 a 100 - USE A ESCALA ACIMA RIGOROSAMENTE>,
-  "summary": "<resumo de 2-3 frases sobre a compatibilidade REAL, mencione a área real do candidato vs área da vaga>",
-  "strengths": ["<ponto forte REAL e verificável no currículo — cite cargo/empresa específica>"],
-  "weaknesses": ["<gap ou deficiência REAL em relação à vaga — seja específico>"],
+  "score": <número de 0 a 100>,
+  "summary": "<resumo de 2-3 frases: diga a área REAL do candidato, compare com a área da vaga, e conclua se há match>",
+  "strengths": ["<ponto forte REAL e verificável — cite cargo/empresa específica do currículo>"],
+  "weaknesses": ["<gap REAL: competências ausentes, área diferente, erros de português encontrados>"],
   "recommendation": "<Recomendado | Com Ressalvas | Não Recomendado>"
 }
 
-ATENÇÃO MÁXIMA: 
-- Se a área principal do currículo NÃO É a área da vaga, score DEVE ser ≤ 40 e recommendation DEVE ser "Não Recomendado" ou "Com Ressalvas".
+REGRAS FINAIS INVIOLÁVEIS:
+- Área diferente da vaga → score ≤ 40, recommendation = "Não Recomendado"
 - NÃO INVENTE qualidades. Cite APENAS o que está ESCRITO no currículo.
-- Um currículo de Marketing NÃO É adequado para vaga de Vendas apenas por ter "comunicação".`;
+- Erros de português → penalizar e listar em weaknesses.
+- Um currículo de Marketing NÃO É adequado para vaga de Vendas.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
