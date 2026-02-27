@@ -5,11 +5,12 @@ import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -36,6 +37,51 @@ export default function CandidateDetail() {
   const upsertDisc = useUpsertDisc();
   const updateCandidate = useUpdateCandidate();
   const deleteCandidate = useDeleteCandidate();
+
+  // Fetch candidate responses with questions and stage info
+  const { data: candidateResponses = [] } = useQuery({
+    queryKey: ["candidate-responses", id],
+    enabled: !!id && !!candidate?.job_id,
+    queryFn: async () => {
+      const { data: responses, error } = await supabase
+        .from("candidate_responses")
+        .select("id, response_value, file_url, question_id, created_at")
+        .eq("candidate_id", id!);
+      if (error) throw error;
+      if (!responses?.length) return [];
+
+      const questionIds = responses.map(r => r.question_id);
+      const { data: questions } = await supabase
+        .from("stage_questions")
+        .select("id, question_text, stage_id, question_order")
+        .in("id", questionIds);
+
+      const stageIds = [...new Set(questions?.map(q => q.stage_id) || [])];
+      const { data: stagesData } = await supabase
+        .from("job_stages")
+        .select("id, label, stage_order")
+        .in("id", stageIds)
+        .order("stage_order");
+
+      const questionMap = new Map(questions?.map(q => [q.id, q]) || []);
+      const stageMap = new Map(stagesData?.map(s => [s.id, s]) || []);
+
+      return responses
+        .map(r => {
+          const q = questionMap.get(r.question_id);
+          const s = q ? stageMap.get(q.stage_id) : null;
+          return {
+            ...r,
+            code: r.id.substring(0, 8).toUpperCase(),
+            question_text: q?.question_text || "",
+            question_order: q?.question_order || 0,
+            stage_label: s?.label || "",
+            stage_order: s?.stage_order || 0,
+          };
+        })
+        .sort((a, b) => a.stage_order - b.stage_order || a.question_order - b.question_order);
+    },
+  });
 
   if (isLoading) {
     return <AppLayout><div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Carregando...</div></AppLayout>;
@@ -400,7 +446,40 @@ export default function CandidateDetail() {
           )}
         </div>
 
-        {/* Score breakdown */}
+        {/* Respostas do Candidato */}
+        {candidateResponses.length > 0 && (
+          <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+            <div className="mb-4 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <h2 className="font-display text-base font-bold text-foreground">Respostas do Candidato</h2>
+              <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{candidateResponses.length} respostas</span>
+            </div>
+            {(() => {
+              const grouped = candidateResponses.reduce((acc, r) => {
+                if (!acc[r.stage_label]) acc[r.stage_label] = [];
+                acc[r.stage_label].push(r);
+                return acc;
+              }, {} as Record<string, typeof candidateResponses>);
+
+              return Object.entries(grouped).map(([stageLabel, responses]) => (
+                <div key={stageLabel} className="mb-4 last:mb-0">
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">{stageLabel}</h3>
+                  <div className="space-y-3">
+                    {responses.map((r) => (
+                      <div key={r.id} className="rounded-lg border border-border bg-muted/30 p-3">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">{r.code}</span>
+                          <span className="text-xs font-medium text-foreground">{r.question_text}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{r.response_value || <span className="italic">Sem resposta</span>}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
         {scorableStages.length > 0 && (
           <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
             <h2 className="mb-3 font-display text-base font-bold text-foreground">Cálculo do Score Final</h2>
