@@ -1,6 +1,6 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { useJobs, useCreateJob, useDeleteJob, useUpdateJob } from "@/hooks/useJobs";
-import { Plus, Copy, Settings, ChevronRight, Users, Calendar, Trash2, Archive, MoreVertical } from "lucide-react";
+import { useJobs, useCreateJob, useDeleteJob, useUpdateJob, useDuplicateJob } from "@/hooks/useJobs";
+import { Plus, Copy, Settings, ChevronRight, Users, Calendar, Trash2, Archive, MoreVertical, CopyPlus } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -41,6 +41,7 @@ export default function Jobs() {
   const createJob = useCreateJob();
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
+  const duplicateJob = useDuplicateJob();
 
   const filteredJobs = filter === "all" ? jobs : jobs.filter((j) => j.area === filter);
   const candidateCount = (jobId: string) => candidates.filter(c => c.job_id === jobId).length;
@@ -159,6 +160,9 @@ export default function Jobs() {
                     <MoreVertical className="h-3.5 w-3.5" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => duplicateJob.mutate(job.id)}>
+                      <CopyPlus className="mr-2 h-3.5 w-3.5" /> Duplicar
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => updateJob.mutate({ id: job.id, status: job.status === "active" ? "draft" : "active" })}>
                       {job.status === "active" ? "Desativar" : "Ativar"}
                     </DropdownMenuItem>
