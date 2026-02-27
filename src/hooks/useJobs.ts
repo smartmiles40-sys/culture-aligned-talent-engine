@@ -104,3 +104,58 @@ export function useDeleteJob() {
     },
   });
 }
+
+export function useDuplicateJob() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (sourceJobId: string) => {
+      // 1. Fetch source job
+      const { data: source, error: jobErr } = await supabase
+        .from("jobs").select("*").eq("id", sourceJobId).single();
+      if (jobErr || !source) throw jobErr || new Error("Vaga não encontrada");
+
+      // 2. Create duplicate job (as draft)
+      const { id: _id, created_at: _ca, updated_at: _ua, ...jobFields } = source;
+      const { data: newJob, error: insertErr } = await supabase
+        .from("jobs")
+        .insert([{ ...jobFields, title: `${source.title} (cópia)`, status: "draft" }])
+        .select().single();
+      if (insertErr || !newJob) throw insertErr || new Error("Erro ao duplicar");
+
+      // 3. Fetch and duplicate stages
+      const { data: stages } = await supabase
+        .from("job_stages").select("*").eq("job_id", sourceJobId).order("stage_order");
+      if (stages && stages.length > 0) {
+        for (const stage of stages) {
+          const { id: oldStageId, created_at: _sc, job_id: _jid, ...stageFields } = stage;
+          const { data: newStage } = await supabase
+            .from("job_stages")
+            .insert([{ ...stageFields, job_id: newJob.id }])
+            .select().single();
+
+          if (newStage) {
+            // 4. Duplicate questions for this stage
+            const { data: questions } = await supabase
+              .from("stage_questions").select("*").eq("stage_id", oldStageId).order("question_order");
+            if (questions && questions.length > 0) {
+              const newQuestions = questions.map(({ id: _qid, created_at: _qc, stage_id: _sid, ...qFields }) => ({
+                ...qFields, stage_id: newStage.id,
+              }));
+              await supabase.from("stage_questions").insert(newQuestions);
+            }
+          }
+        }
+      }
+
+      return newJob;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jobs"] });
+      toast({ title: "Vaga duplicada com sucesso!", description: "A cópia foi criada como rascunho." });
+    },
+    onError: (e: Error) => {
+      toast({ title: "Erro ao duplicar vaga", description: e.message, variant: "destructive" });
+    },
+  });
+}
