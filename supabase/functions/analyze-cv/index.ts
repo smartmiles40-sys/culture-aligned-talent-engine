@@ -36,8 +36,21 @@ serve(async (req) => {
       });
     }
 
-    // Extract text from the file
-    const cvText = await fileData.text();
+    // Convert file to base64 for multimodal AI analysis (handles scanned PDFs too)
+    const arrayBuffer = await fileData.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+    let binary = "";
+    for (let i = 0; i < uint8.length; i++) {
+      binary += String.fromCharCode(uint8[i]);
+    }
+    const base64Content = btoa(binary);
+
+    // Detect MIME type
+    const extension = cvPath.split(".").pop()?.toLowerCase();
+    const mimeType = extension === "pdf" ? "application/pdf" 
+      : extension === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      : extension === "doc" ? "application/msword"
+      : "application/octet-stream";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -80,8 +93,8 @@ serve(async (req) => {
 - **Competências obrigatórias:** ${requiredSkills?.join(", ") || "Não especificadas"}
 - **Perfil comportamental desejado:** ${behavioralProfile || "Não especificado"}
 
-## Currículo do Candidato (analise LITERALMENTE o que está escrito):
-${cvText.substring(0, 8000)}
+## Currículo do Candidato:
+O arquivo do currículo está anexado como documento. Analise LITERALMENTE o que está escrito nele.
 
 ## CHECKLIST OBRIGATÓRIO (responda mentalmente antes de dar o score):
 1. Qual é a área REAL de atuação do candidato? (baseado nos cargos e empresas)
@@ -112,10 +125,13 @@ REGRAS FINAIS INVIOLÁVEIS:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "Você é um assistente de RH especializado em análise de currículos. Sempre responda em JSON válido." },
-          { role: "user", content: prompt },
+          { role: "user", content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Content}` } },
+          ] },
         ],
       }),
     });
