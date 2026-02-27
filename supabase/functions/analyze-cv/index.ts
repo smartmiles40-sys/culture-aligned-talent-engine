@@ -46,17 +46,27 @@ serve(async (req) => {
 
 ## REGRAS CRÍTICAS DE VALIDAÇÃO (aplicar ANTES de qualquer análise):
 
-1. **Verificação de documento**: Se o conteúdo NÃO for um currículo real (foto, receita, documento aleatório, texto sem sentido, conteúdo binário/ilegível), retorne score 0 e recommendation "Não Recomendado".
+1. **Verificação de documento**: Se o conteúdo NÃO for um currículo real (foto, receita, documento aleatório, texto sem sentido, conteúdo binário/ilegível, ou texto que não contém informações profissionais como nome, experiência, formação), retorne score 0 e recommendation "Não Recomendado".
 
-2. **Verificação de relevância para a vaga**: Se o currículo é real MAS a experiência e formação do candidato NÃO TÊM RELAÇÃO com a vaga anunciada, o score DEVE ser BAIXO (0-30). Um programador se candidatando para vaga de vendas, ou um cozinheiro para vaga de TI, DEVE receber score baixo.
+2. **VERIFICAÇÃO DE ÁREA/RELEVÂNCIA (REGRA MAIS IMPORTANTE)**:
+   - Compare a ÁREA DE ATUAÇÃO do candidato com a ÁREA DA VAGA.
+   - Se o candidato tem experiência PREDOMINANTEMENTE em uma área DIFERENTE da vaga (ex: currículo de Marketing para vaga de Vendas, currículo de TI para vaga de RH, currículo de Operações para vaga de Comercial), o score MÁXIMO deve ser 40.
+   - NÃO INVENTE conexões que não existem. Ter "comunicação" ou "trabalho em equipe" NÃO torna um profissional de marketing adequado para vendas.
+   - Experiência em "vendas" mencionada vagamente em um currículo de outra área NÃO conta como experiência real em vendas.
+   - ANALISE O HISTÓRICO REAL: onde a pessoa REALMENTE trabalhou, quais cargos REALMENTE ocupou, o que REALMENTE fez no dia a dia.
 
-3. **Critérios de pontuação RIGOROSOS**:
-   - 0-20: Arquivo inválido, ou experiência completamente irrelevante para a vaga
-   - 21-40: Pouca relevância, experiência tangencial, falta a maioria das competências
-   - 41-60: Alguma relevância, mas faltam competências importantes ou experiência é superficial
-   - 61-75: Boa aderência, possui a maioria das competências, experiência relevante
-   - 76-90: Forte aderência, experiência sólida na área, quase todas as competências
-   - 91-100: Excepcional, candidato ideal com todas as competências e experiência extensa
+3. **Verificação de competências obrigatórias**: 
+   - Para cada competência listada como obrigatória, verifique se há EVIDÊNCIA CONCRETA no currículo.
+   - Se mais de 50% das competências obrigatórias NÃO estão evidenciadas, o score máximo deve ser 50.
+
+4. **Critérios de pontuação RIGOROSOS**:
+   - 0-10: Arquivo inválido, não é currículo
+   - 11-25: Experiência em área COMPLETAMENTE diferente da vaga, sem nenhuma conexão real
+   - 26-40: Área tangencialmente relacionada, mas experiência principal é outra. Faltam competências fundamentais
+   - 41-55: Alguma experiência na área, mas faltam competências importantes ou experiência é rasa
+   - 56-70: Experiência relevante na área, possui parte das competências, mas com gaps
+   - 71-85: Boa aderência, experiência sólida na mesma área, maioria das competências presentes
+   - 86-100: Excepcional, candidato ideal com experiência extensa NA MESMA ÁREA e todas as competências
 
 ## Vaga
 - **Título:** ${jobTitle}
@@ -68,18 +78,23 @@ serve(async (req) => {
 ${cvText.substring(0, 8000)}
 
 ## Instruções
-SEJA RIGOROSO. NÃO infle notas. Compare ESTRITAMENTE a experiência e competências do candidato com os requisitos da vaga.
+SEJA EXTREMAMENTE RIGOROSO. Analise o currículo LITERALMENTE — cite apenas fatos que REALMENTE constam no documento.
+NÃO INVENTE experiências, cargos ou competências que não estejam escritos no currículo.
+Se o currículo é de uma área diferente da vaga, DIGA ISSO CLARAMENTE e dê score BAIXO.
 
 Retorne EXATAMENTE no seguinte formato JSON (sem markdown, sem código):
 {
   "score": <número de 0 a 100 - USE A ESCALA ACIMA RIGOROSAMENTE>,
-  "summary": "<resumo de 2-3 frases sobre a compatibilidade REAL, seja honesto sobre gaps>",
-  "strengths": ["<ponto forte REAL e verificável no currículo>"],
-  "weaknesses": ["<gap ou deficiência REAL em relação à vaga>"],
+  "summary": "<resumo de 2-3 frases sobre a compatibilidade REAL, mencione a área real do candidato vs área da vaga>",
+  "strengths": ["<ponto forte REAL e verificável no currículo — cite cargo/empresa específica>"],
+  "weaknesses": ["<gap ou deficiência REAL em relação à vaga — seja específico>"],
   "recommendation": "<Recomendado | Com Ressalvas | Não Recomendado>"
 }
 
-ATENÇÃO: Se não houver match claro entre o perfil do candidato e a vaga, o score DEVE ser baixo. Não invente qualidades que não existem no currículo.`;
+ATENÇÃO MÁXIMA: 
+- Se a área principal do currículo NÃO É a área da vaga, score DEVE ser ≤ 40 e recommendation DEVE ser "Não Recomendado" ou "Com Ressalvas".
+- NÃO INVENTE qualidades. Cite APENAS o que está ESCRITO no currículo.
+- Um currículo de Marketing NÃO É adequado para vaga de Vendas apenas por ter "comunicação".`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
