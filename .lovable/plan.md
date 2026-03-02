@@ -1,43 +1,50 @@
 
 
-## Problems Identified
+## Diagnóstico do Problema
 
-1. **CV Analysis is wrong**: The file uploaded (`800_Calorias_sem_restriA_A_o.pdf`) is a photo, not a CV. The AI hallucinated a score of 85 and fabricated strengths/weaknesses. This needs to be cleared.
+Analisei as respostas reais do candidato e os scores dados pela IA. O problema está claro:
 
-2. **Stage scores are empty**: The candidate submitted text responses for Blocos C, D, and F, but no evaluations were created for those stages. Currently, scores are only filled manually by recruiters or by the CV analysis for Bloco B. There is no automatic AI scoring for the other stages based on candidate responses.
+**As respostas mostram um candidato com experiência comercial real:**
+- Meta mensal de R$750.000 atingida
+- Taxa de conversão de 30%
+- Domina ferramentas como RD Station, Pipedrive, Salesforce, Kommo
+- Usa SPIN Selling, conhece funil de vendas
+- Experiência em múltiplos canais de atendimento
 
-## Plan
+**Mas os scores foram:**
+- Bloco C (Experiência): **58** — penalizou pesado por erros de grafia ("pipieDrive", "WaSaller", "adépto")
+- Bloco D (Performance): **25** — penalizou por "janeiro de 2026", respostas curtas e erros ortográficos
+- Bloco F (Cultura): **35** — penalizou por respostas "superficiais" e erros de português
 
-### 1. Clear the invalid CV analysis for this candidate
+**Score final: ~38/100 (Risco)** — para um candidato que claramente tem perfil comercial relevante.
 
-Run a database update to set `cv_analysis` to null and delete the incorrect Bloco B evaluation for this candidate, since the uploaded file was not a real CV.
+### Causa raiz
 
-### 2. Add AI auto-scoring of candidate responses on submission
+O prompt da IA está configurado para ser "EXTREMAMENTE RIGOROSO" e penaliza 10-20 pontos por erros de português. Isso faz sentido para vagas que exigem comunicação escrita impecável, mas para vagas comerciais/vendas, penalizar tanto por digitação em formulário online distorce completamente a avaliação.
 
-Create a new edge function `score-candidate-responses` that:
-- Receives `candidateId` and `jobId`
-- Fetches all candidate responses grouped by stage
-- For each scorable stage (weight > 0), sends the questions + responses to the AI gateway
-- AI returns a score (0-100) and brief justification
-- Inserts evaluations into `candidate_evaluations` for each stage
+## Plano de Correção
 
-### 3. Call the new function from PublicApplicationForm after submission
+### 1. Rebalancear os critérios de avaliação no `score-candidate-responses`
 
-After the candidate record is created and responses are saved, invoke `score-candidate-responses` (fire-and-forget, same as `analyze-cv`).
+Alterar o prompt da IA para:
+- **Priorizar conteúdo sobre forma**: erros de digitação em formulário devem penalizar no máximo 5 pontos, não 10-20
+- **Valorizar evidências concretas**: números de meta, taxa de conversão, ferramentas citadas devem pesar mais que a gramática
+- **Contextualizar por área da vaga**: para vagas comerciais, o que importa é resultado e experiência, não escrita perfeita
+- **Respostas curtas mas objetivas não são ruins**: "Sim" para "já fez reunião de fechamento?" é uma resposta válida
+- **Escala de pontuação mais justa**: ajustar as faixas para não inflar nem deflacionar
 
-### 4. Update analyze-cv to validate the file is actually a CV
+### 2. Reprocessar as avaliações deste candidato
 
-Add a check in the AI prompt to detect if the uploaded file is not a real CV and return a low score with an appropriate warning instead of hallucinating.
+Após ajustar os critérios, re-executar o `score-candidate-responses` para recalcular os scores com a nova lógica.
 
-### Technical Details
+### Detalhes Técnicos
 
-**New edge function `score-candidate-responses/index.ts`:**
-- Uses Lovable AI (gemini-3-flash-preview) to score each stage
-- System prompt instructs AI to evaluate responses against the job requirements
-- Uses tool calling to extract structured `{ score: number, justification: string }`
-- Inserts one `candidate_evaluations` row per stage with `evaluator_id = null` (AI)
-- Deletes any existing AI evaluations first (same pattern as analyze-cv)
+**Alterações em `supabase/functions/score-candidate-responses/index.ts`:**
 
-**PublicApplicationForm.tsx changes:**
-- After successful submission, call `score-candidate-responses` with `candidateId` and `jobId`
+Novo prompt com critérios balanceados:
+- Faixas de score: 0-20 (irrelevante), 21-40 (genérico sem evidência), 41-60 (razoável), 61-80 (bom com evidências), 81-100 (excelente)
+- Erros de digitação em formulário: penalização máxima de 5 pontos (não 10-20)
+- Respostas curtas mas corretas: não penalizar se a pergunta permite resposta objetiva
+- Números e dados concretos (metas, conversão, ferramentas): devem elevar o score significativamente
+- Incluir contexto da área da vaga para calibrar a avaliação
 
