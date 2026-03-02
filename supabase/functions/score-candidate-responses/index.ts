@@ -87,7 +87,7 @@ serve(async (req) => {
 
       if (!qaPairs) continue;
 
-      const prompt = `Você é um avaliador EXTREMAMENTE RIGOROSO de candidatos. Sua função é proteger a empresa de contratações ruins.
+      const prompt = `Você é um avaliador justo e criterioso de candidatos. Sua função é identificar candidatos com potencial real para a vaga.
 
 Avalie as respostas do candidato para a etapa "${stage.label}" da vaga "${job.title}" (área: ${job.area || "N/A"}).
 
@@ -97,27 +97,35 @@ Perfil comportamental: ${job.behavioral_profile || "N/A"}
 ## Respostas do Candidato:
 ${qaPairs}
 
-## CRITÉRIOS RIGOROSOS DE PONTUAÇÃO:
-- 0-20: Respostas vazias, sem sentido, aleatórias, copiadas, ou completamente irrelevantes
-- 21-40: Respostas genéricas, superficiais, sem exemplos concretos, sem conexão com a vaga
-- 41-60: Respostas razoáveis mas sem profundidade, poucos exemplos, conexão fraca com competências
-- 61-75: Respostas boas com exemplos, demonstra conhecimento relevante
-- 76-90: Respostas excelentes, exemplos concretos, forte alinhamento com competências e cultura
-- 91-100: Respostas excepcionais, experiência comprovada, fit cultural perfeito
+## PRINCÍPIO FUNDAMENTAL:
+Avalie o CONTEÚDO e a SUBSTÂNCIA das respostas, não a forma. Candidatos preenchem formulários online em celulares — erros de digitação são normais e NÃO indicam incompetência.
+
+## CRITÉRIOS DE PONTUAÇÃO (área: ${job.area || "geral"}):
+- 0-20: Respostas vazias, sem sentido, texto aleatório, ou completamente irrelevantes para a pergunta
+- 21-40: Respostas genéricas sem nenhuma evidência concreta, sem conexão com a vaga
+- 41-60: Respostas razoáveis, demonstra algum conhecimento mas sem exemplos específicos
+- 61-80: Respostas boas com evidências concretas (números, ferramentas, experiências específicas)
+- 81-100: Respostas excelentes com múltiplas evidências, forte alinhamento com o perfil da vaga
+
+## O QUE VALORIZAR (eleva o score):
+- Números concretos: metas atingidas, taxas de conversão, volume de vendas, tickets gerenciados
+- Ferramentas e metodologias citadas (mesmo com erros de grafia): CRM, SPIN Selling, etc.
+- Experiências específicas com detalhes reais (empresas, situações, resultados)
+- Respostas que demonstram conhecimento prático da área
+
+## O QUE NÃO PENALIZAR:
+- Erros de digitação ou ortografia em formulário online (penalidade MÁXIMA: 5 pontos)
+- Respostas curtas mas objetivas quando a pergunta permite resposta direta (ex: "Sim", "3 anos", "R$500k")
+- Nomes de ferramentas escritos incorretamente (ex: "pipieDrive" = Pipedrive, "WaSaller" = WhatsApp)
+- Informalidade adequada ao contexto da vaga
 
 ## SINAIS DE ALERTA (score deve ser BAIXO, 0-30):
-- Respostas de uma só palavra ou muito curtas sem substância
-- Texto aleatório, sem sentido ou claramente inventado
-- Respostas que não respondem a pergunta feita
-- Contradições óbvias
-- Respostas genéricas que poderiam ser usadas para qualquer vaga
+- Respostas que NÃO respondem a pergunta feita
+- Texto completamente aleatório ou sem sentido
+- Contradições óbvias que indicam desonestidade
+- Ausência total de qualquer evidência ou experiência
 
-## QUALIDADE DA ESCRITA (penalizar fortemente):
-- Erros graves de português (ortografia, concordância, regência) devem REDUZIR o score em 10-20 pontos
-- Texto mal estruturado, sem pontuação ou com frases incompreensíveis indica baixa capacidade de comunicação
-- Candidato que não consegue se expressar por escrito de forma clara é um risco para a empresa
-
-SEJA HONESTO E RIGOROSO. NÃO infle notas. Use a tool score_stage para retornar a nota.`;
+SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para retornar a nota.`;
 
       const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
