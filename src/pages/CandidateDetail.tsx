@@ -260,18 +260,20 @@ export default function CandidateDetail() {
                 {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
-            {/* Show LinkedIn and other URLs from responses */}
+            {/* Show any responses containing URLs or link-related questions */}
             {candidateResponses
               .filter(r => {
                 const q = r.question_text.toLowerCase();
-                return q.includes("linkedin") || q.includes("portfólio") || q.includes("portfolio") || q.includes("github") || q.includes("site") || q.includes("url") || q.includes("link");
+                const v = (r.response_value || "").toLowerCase();
+                return q.includes("linkedin") || q.includes("portfólio") || q.includes("portfolio") || q.includes("github") || q.includes("site") || q.includes("url") || q.includes("link") ||
+                  v.includes("http") || v.includes("linkedin.com") || v.includes("github.com");
               })
               .map(r => (
                 <div key={r.id}>
                   <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
-                  {r.response_value?.startsWith("http") ? (
-                    <a href={r.response_value} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline">
-                      <ExternalLink className="h-3 w-3" /> {r.response_value}
+                  {r.response_value && /https?:\/\/\S+/i.test(r.response_value) ? (
+                    <a href={r.response_value.match(/https?:\/\/\S+/i)?.[0]} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline break-all">
+                      <ExternalLink className="h-3 w-3 flex-shrink-0" /> {r.response_value}
                     </a>
                   ) : (
                     <p className="text-sm text-foreground">{r.response_value || "—"}</p>
