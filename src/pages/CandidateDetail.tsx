@@ -228,6 +228,59 @@ export default function CandidateDetail() {
           </div>
         </div>
 
+        {/* Dados Pessoais */}
+        <div className="mb-6 rounded-xl border border-border bg-card p-5 shadow-card">
+          <h2 className="mb-3 font-display text-base font-bold text-foreground">Dados Pessoais</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">Nome</span>
+              <p className="text-sm text-foreground">{candidate.name}</p>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">E-mail</span>
+              <p className="text-sm text-foreground">{candidate.email}</p>
+            </div>
+            {candidate.phone && (
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground">Telefone</span>
+                <p className="text-sm text-foreground">{candidate.phone}</p>
+              </div>
+            )}
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">Vaga</span>
+              <p className="text-sm text-foreground">{job?.title || "—"} ({job?.area || "—"})</p>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">Status</span>
+              <p className="text-sm text-foreground capitalize">{candidate.status === "in_progress" ? "Em andamento" : candidate.status === "archived" ? "Arquivado" : candidate.status || "—"}</p>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">Data de candidatura</span>
+              <p className="text-sm text-foreground">
+                {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+            {/* Show LinkedIn and other URLs from responses */}
+            {candidateResponses
+              .filter(r => {
+                const q = r.question_text.toLowerCase();
+                return q.includes("linkedin") || q.includes("portfólio") || q.includes("portfolio") || q.includes("github") || q.includes("site") || q.includes("url") || q.includes("link");
+              })
+              .map(r => (
+                <div key={r.id}>
+                  <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
+                  {r.response_value?.startsWith("http") ? (
+                    <a href={r.response_value} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline">
+                      <ExternalLink className="h-3 w-3" /> {r.response_value}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-foreground">{r.response_value || "—"}</p>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+
         {/* Score */}
         <div className="mb-6 flex items-center gap-6 rounded-xl border border-border bg-card p-5 shadow-card">
           <div className="text-center">
