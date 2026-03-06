@@ -526,7 +526,15 @@ export default function CandidateDetail() {
                           <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">{r.code}</span>
                           <span className="text-xs font-medium text-foreground">{r.question_text}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{r.response_value || <span className="italic">Sem resposta</span>}</p>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {r.response_value ? (
+                            /https?:\/\/\S+/i.test(r.response_value) ? (
+                              <a href={r.response_value.match(/https?:\/\/\S+/i)?.[0]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-info hover:underline break-all">
+                                <ExternalLink className="h-3 w-3 flex-shrink-0" /> {r.response_value}
+                              </a>
+                            ) : r.response_value
+                          ) : <span className="italic">Sem resposta</span>}
+                        </div>
                       </div>
                     ))}
                   </div>
