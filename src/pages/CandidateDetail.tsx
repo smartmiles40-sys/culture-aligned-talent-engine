@@ -260,39 +260,32 @@ export default function CandidateDetail() {
                 {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
-            {/* Show any responses containing URLs or link-related questions */}
-            {candidateResponses
-              .filter(r => {
-                const q = r.question_text.toLowerCase();
-                const v = (r.response_value || "").toLowerCase();
-                return q.includes("linkedin") || q.includes("instagram") || q.includes("portfólio") || q.includes("portfolio") || q.includes("github") || q.includes("site") || q.includes("url") || q.includes("link") || q.includes("rede") ||
-                  v.includes("http") || v.includes("linkedin.com") || v.includes("github.com") || v.includes("instagram.com");
-              })
-              .map(r => {
-                const value = r.response_value || "";
-                const urlMatch = value.match(/https?:\/\/\S+/i);
-                // Also detect social handles like @username or bare domains
-                const isSocialHandle = /^@?\w+/.test(value) && (r.question_text.toLowerCase().includes("instagram") || r.question_text.toLowerCase().includes("linkedin") || r.question_text.toLowerCase().includes("github"));
-                let href = urlMatch?.[0] || "";
-                if (!href && isSocialHandle) {
-                  const handle = value.replace(/^@/, "");
-                  if (r.question_text.toLowerCase().includes("instagram")) href = `https://instagram.com/${handle}`;
-                  else if (r.question_text.toLowerCase().includes("linkedin")) href = `https://linkedin.com/in/${handle}`;
-                  else if (r.question_text.toLowerCase().includes("github")) href = `https://github.com/${handle}`;
-                }
-                return (
-                  <div key={r.id}>
-                    <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
-                    {href ? (
-                      <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline break-all">
-                        <ExternalLink className="h-3 w-3 flex-shrink-0" /> {value}
-                      </a>
-                    ) : (
-                      <p className="text-sm text-foreground">{value || "—"}</p>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Show all candidate responses as personal data fields */}
+            {candidateResponses.map(r => {
+              const value = r.response_value || "";
+              const qLower = r.question_text.toLowerCase();
+              const urlMatch = value.match(/https?:\/\/\S+/i);
+              const isSocialHandle = /^@?\w+/.test(value) && (qLower.includes("instagram") || qLower.includes("linkedin") || qLower.includes("github"));
+              let href = urlMatch?.[0] || "";
+              if (!href && isSocialHandle) {
+                const handle = value.replace(/^@/, "");
+                if (qLower.includes("instagram")) href = `https://instagram.com/${handle}`;
+                else if (qLower.includes("linkedin")) href = `https://linkedin.com/in/${handle}`;
+                else if (qLower.includes("github")) href = `https://github.com/${handle}`;
+              }
+              return (
+                <div key={r.id}>
+                  <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
+                  {href ? (
+                    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline break-all">
+                      <ExternalLink className="h-3 w-3 flex-shrink-0" /> {value}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-foreground">{value || "—"}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
