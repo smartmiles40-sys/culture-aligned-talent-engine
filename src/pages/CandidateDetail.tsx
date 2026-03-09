@@ -272,7 +272,7 @@ export default function CandidateDetail() {
             </div>
             <div>
               <span className="text-xs font-semibold text-muted-foreground">Status</span>
-              <p className="text-sm text-foreground capitalize">{candidate.status === "in_progress" ? "Em andamento" : candidate.status === "archived" ? "Arquivado" : candidate.status || "—"}</p>
+              <p className={cn("text-sm font-medium capitalize", candidate.status === "approved" ? "text-success" : candidate.status === "rejected" ? "text-destructive" : "text-foreground")}>{candidate.status === "in_progress" ? "Em andamento" : candidate.status === "archived" ? "Arquivado" : candidate.status === "approved" ? "Aprovado" : candidate.status === "rejected" ? "Reprovado" : candidate.status || "—"}</p>
             </div>
             <div>
               <span className="text-xs font-semibold text-muted-foreground">Data de candidatura</span>
