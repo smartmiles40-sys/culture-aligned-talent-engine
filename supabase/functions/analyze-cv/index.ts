@@ -68,24 +68,35 @@ serve(async (req) => {
    - NÃO INVENTE conexões que não existem. Ter "comunicação" ou "trabalho em equipe" NÃO torna um profissional de marketing adequado para vendas.
    - Experiência em "vendas" mencionada vagamente em um currículo de outra área NÃO conta como experiência real em vendas.
 
-3. **Verificação de competências obrigatórias**: 
+3. **VERIFICAÇÃO DE ESTABILIDADE / JOB-HOPPING (REGRA CRÍTICA)**:
+   - Analise o TEMPO DE PERMANÊNCIA em cada empresa listada no currículo.
+   - Se o candidato tem um PADRÃO de ficar menos de 6 meses em múltiplas empresas (2 ou mais), isso é um sinal grave de instabilidade.
+   - Penalização por job-hopping:
+     * 3+ empresas com menos de 6 meses cada → score MÁXIMO = 30, recommendation = "Não Recomendado"
+     * 2 empresas com menos de 6 meses cada → reduzir score em 20-25 pontos
+     * 1 empresa com menos de 6 meses → reduzir score em 10 pontos (pode ser período de experiência)
+   - Se o candidato NÃO informa datas ou períodos de trabalho, mencione isso como weakness ("Não informa períodos de permanência nas empresas").
+   - Considere exceções razoáveis: estágios, contratos temporários explícitos, ou primeira experiência.
+   - SEMPRE liste o tempo médio de permanência nas empresas no summary.
+
+4. **Verificação de competências obrigatórias**: 
    - Para CADA competência listada abaixo, verifique se há EVIDÊNCIA CONCRETA no currículo (cargo, projeto, resultado).
    - Se mais de 50% das competências obrigatórias NÃO estão evidenciadas, o score máximo deve ser 50.
    - Competências obrigatórias da vaga: ${requiredSkills?.join(", ") || "Não especificadas"}
 
-4. **QUALIDADE DA ESCRITA DO CURRÍCULO**:
+5. **QUALIDADE DA ESCRITA DO CURRÍCULO**:
    - Erros graves de português (ortografia, concordância, regência) devem REDUZIR o score em 10-15 pontos.
    - Currículo mal formatado, com frases incoerentes ou sem estrutura profissional indica baixa capacidade de comunicação.
    - Mencione os erros encontrados na lista de weaknesses.
 
-5. **Critérios de pontuação RIGOROSOS**:
+6. **Critérios de pontuação RIGOROSOS**:
    - 0-10: Arquivo inválido, não é currículo
-   - 11-25: Experiência em área COMPLETAMENTE diferente da vaga, sem nenhuma conexão real
-   - 26-40: Área tangencialmente relacionada, mas experiência principal é outra
+   - 11-25: Experiência em área COMPLETAMENTE diferente da vaga OU job-hopper crônico (3+ empresas < 6 meses)
+   - 26-40: Área tangencialmente relacionada OU padrão de instabilidade significativo
    - 41-55: Alguma experiência na área, mas faltam competências importantes
    - 56-70: Experiência relevante na área, possui parte das competências, mas com gaps
-   - 71-85: Boa aderência, experiência sólida na mesma área, maioria das competências
-   - 86-100: Excepcional, candidato ideal com experiência extensa NA MESMA ÁREA
+   - 71-85: Boa aderência, experiência sólida na mesma área, maioria das competências, boa estabilidade
+   - 86-100: Excepcional, candidato ideal com experiência extensa NA MESMA ÁREA e estabilidade comprovada
 
 ## DESCRIÇÃO COMPLETA DA VAGA (compare CADA item com o currículo):
 - **Título:** ${jobTitle}
@@ -99,21 +110,23 @@ O arquivo do currículo está anexado como documento. Analise LITERALMENTE o que
 ## CHECKLIST OBRIGATÓRIO (responda mentalmente antes de dar o score):
 1. Qual é a área REAL de atuação do candidato? (baseado nos cargos e empresas)
 2. Essa área é a MESMA da vaga? Se não, score máximo = 40.
-3. Quantas das competências obrigatórias o candidato REALMENTE demonstra? (cite evidências)
-4. O currículo tem erros de português? Se sim, penalize 10-15 pontos.
-5. As experiências citadas são RELEVANTES para o dia a dia da vaga?
+3. Qual o TEMPO MÉDIO de permanência nas empresas? Há padrão de job-hopping?
+4. Quantas das competências obrigatórias o candidato REALMENTE demonstra? (cite evidências)
+5. O currículo tem erros de português? Se sim, penalize 10-15 pontos.
+6. As experiências citadas são RELEVANTES para o dia a dia da vaga?
 
 Retorne EXATAMENTE no seguinte formato JSON (sem markdown, sem código):
 {
   "score": <número de 0 a 100>,
-  "summary": "<resumo de 2-3 frases: diga a área REAL do candidato, compare com a área da vaga, e conclua se há match>",
+  "summary": "<resumo de 2-3 frases: diga a área REAL do candidato, tempo médio nas empresas, compare com a área da vaga, e conclua se há match>",
   "strengths": ["<ponto forte REAL e verificável — cite cargo/empresa específica do currículo>"],
-  "weaknesses": ["<gap REAL: competências ausentes, área diferente, erros de português encontrados>"],
+  "weaknesses": ["<gap REAL: competências ausentes, área diferente, job-hopping, erros de português encontrados>"],
   "recommendation": "<Recomendado | Com Ressalvas | Não Recomendado>"
 }
 
 REGRAS FINAIS INVIOLÁVEIS:
 - Área diferente da vaga → score ≤ 40, recommendation = "Não Recomendado"
+- Job-hopper crônico (3+ empresas < 6 meses) → score ≤ 30, recommendation = "Não Recomendado"
 - NÃO INVENTE qualidades. Cite APENAS o que está ESCRITO no currículo.
 - Erros de português → penalizar e listar em weaknesses.
 - Um currículo de Marketing NÃO É adequado para vaga de Vendas.`;
