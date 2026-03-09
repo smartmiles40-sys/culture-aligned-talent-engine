@@ -265,21 +265,34 @@ export default function CandidateDetail() {
               .filter(r => {
                 const q = r.question_text.toLowerCase();
                 const v = (r.response_value || "").toLowerCase();
-                return q.includes("linkedin") || q.includes("portfólio") || q.includes("portfolio") || q.includes("github") || q.includes("site") || q.includes("url") || q.includes("link") ||
-                  v.includes("http") || v.includes("linkedin.com") || v.includes("github.com");
+                return q.includes("linkedin") || q.includes("instagram") || q.includes("portfólio") || q.includes("portfolio") || q.includes("github") || q.includes("site") || q.includes("url") || q.includes("link") || q.includes("rede") ||
+                  v.includes("http") || v.includes("linkedin.com") || v.includes("github.com") || v.includes("instagram.com");
               })
-              .map(r => (
-                <div key={r.id}>
-                  <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
-                  {r.response_value && /https?:\/\/\S+/i.test(r.response_value) ? (
-                    <a href={r.response_value.match(/https?:\/\/\S+/i)?.[0]} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline break-all">
-                      <ExternalLink className="h-3 w-3 flex-shrink-0" /> {r.response_value}
-                    </a>
-                  ) : (
-                    <p className="text-sm text-foreground">{r.response_value || "—"}</p>
-                  )}
-                </div>
-              ))}
+              .map(r => {
+                const value = r.response_value || "";
+                const urlMatch = value.match(/https?:\/\/\S+/i);
+                // Also detect social handles like @username or bare domains
+                const isSocialHandle = /^@?\w+/.test(value) && (r.question_text.toLowerCase().includes("instagram") || r.question_text.toLowerCase().includes("linkedin") || r.question_text.toLowerCase().includes("github"));
+                let href = urlMatch?.[0] || "";
+                if (!href && isSocialHandle) {
+                  const handle = value.replace(/^@/, "");
+                  if (r.question_text.toLowerCase().includes("instagram")) href = `https://instagram.com/${handle}`;
+                  else if (r.question_text.toLowerCase().includes("linkedin")) href = `https://linkedin.com/in/${handle}`;
+                  else if (r.question_text.toLowerCase().includes("github")) href = `https://github.com/${handle}`;
+                }
+                return (
+                  <div key={r.id}>
+                    <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
+                    {href ? (
+                      <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline break-all">
+                        <ExternalLink className="h-3 w-3 flex-shrink-0" /> {value}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-foreground">{value || "—"}</p>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </div>
 
