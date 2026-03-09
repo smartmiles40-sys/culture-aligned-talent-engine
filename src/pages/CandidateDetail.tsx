@@ -216,6 +216,26 @@ export default function CandidateDetail() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {candidate.status !== "approved" && (
+              <button
+                onClick={() => updateCandidate.mutate({ id: candidate.id, status: "approved" })}
+                className="flex items-center gap-1.5 rounded-lg bg-success/10 px-3 py-2 text-sm font-semibold text-success hover:bg-success/20 transition-colors"
+                title="Aprovar"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Aprovar
+              </button>
+            )}
+            {candidate.status !== "rejected" && (
+              <button
+                onClick={() => updateCandidate.mutate({ id: candidate.id, status: "rejected" })}
+                className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+                title="Reprovar"
+              >
+                <XCircle className="h-4 w-4" />
+                Reprovar
+              </button>
+            )}
             <button onClick={handleEdit} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" title="Editar">
               <Edit2 className="h-4 w-4" />
             </button>
