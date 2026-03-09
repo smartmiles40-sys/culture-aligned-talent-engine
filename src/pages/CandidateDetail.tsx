@@ -5,7 +5,7 @@ import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -216,6 +216,26 @@ export default function CandidateDetail() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {candidate.status !== "approved" && (
+              <button
+                onClick={() => updateCandidate.mutate({ id: candidate.id, status: "approved" })}
+                className="flex items-center gap-1.5 rounded-lg bg-success/10 px-3 py-2 text-sm font-semibold text-success hover:bg-success/20 transition-colors"
+                title="Aprovar"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Aprovar
+              </button>
+            )}
+            {candidate.status !== "rejected" && (
+              <button
+                onClick={() => updateCandidate.mutate({ id: candidate.id, status: "rejected" })}
+                className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+                title="Reprovar"
+              >
+                <XCircle className="h-4 w-4" />
+                Reprovar
+              </button>
+            )}
             <button onClick={handleEdit} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" title="Editar">
               <Edit2 className="h-4 w-4" />
             </button>
@@ -252,7 +272,7 @@ export default function CandidateDetail() {
             </div>
             <div>
               <span className="text-xs font-semibold text-muted-foreground">Status</span>
-              <p className="text-sm text-foreground capitalize">{candidate.status === "in_progress" ? "Em andamento" : candidate.status === "archived" ? "Arquivado" : candidate.status || "—"}</p>
+              <p className={cn("text-sm font-medium capitalize", candidate.status === "approved" ? "text-success" : candidate.status === "rejected" ? "text-destructive" : "text-foreground")}>{candidate.status === "in_progress" ? "Em andamento" : candidate.status === "archived" ? "Arquivado" : candidate.status === "approved" ? "Aprovado" : candidate.status === "rejected" ? "Reprovado" : candidate.status || "—"}</p>
             </div>
             <div>
               <span className="text-xs font-semibold text-muted-foreground">Data de candidatura</span>
