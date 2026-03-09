@@ -540,13 +540,24 @@ export default function CandidateDetail() {
                           <span className="text-xs font-medium text-foreground">{r.question_text}</span>
                         </div>
                         <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {r.response_value ? (
-                            /https?:\/\/\S+/i.test(r.response_value) ? (
-                              <a href={r.response_value.match(/https?:\/\/\S+/i)?.[0]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-info hover:underline break-all">
-                                <ExternalLink className="h-3 w-3 flex-shrink-0" /> {r.response_value}
+                          {r.response_value ? (() => {
+                            const value = r.response_value || "";
+                            const urlMatch = value.match(/https?:\/\/\S+/i);
+                            const qLower = r.question_text.toLowerCase();
+                            const isSocialHandle = /^@?\w+/.test(value) && (qLower.includes("instagram") || qLower.includes("linkedin") || qLower.includes("github"));
+                            let href = urlMatch?.[0] || "";
+                            if (!href && isSocialHandle) {
+                              const handle = value.replace(/^@/, "");
+                              if (qLower.includes("instagram")) href = `https://instagram.com/${handle}`;
+                              else if (qLower.includes("linkedin")) href = `https://linkedin.com/in/${handle}`;
+                              else if (qLower.includes("github")) href = `https://github.com/${handle}`;
+                            }
+                            return href ? (
+                              <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-info hover:underline break-all">
+                                <ExternalLink className="h-3 w-3 flex-shrink-0" /> {value}
                               </a>
-                            ) : r.response_value
-                          ) : <span className="italic">Sem resposta</span>}
+                            ) : value;
+                          })() : <span className="italic">Sem resposta</span>}
                         </div>
                       </div>
                     ))}
