@@ -117,10 +117,10 @@ export default function PublicApplicationForm() {
     { type: "cv", label: "Currículo" },
   ];
 
-  // Add stages that have questions (skip cv_upload and application since they're handled)
-  const questionStages = stages.filter(s => !["application", "cv_upload"].includes(s.stage_key));
+  // Add stages that have questions (skip cv_upload since it's handled separately)
+  const questionStages = stages.filter(s => s.stage_key !== "cv_upload");
   questionStages.forEach((s, i) => {
-    formSteps.push({ type: "stage", stageId: s.id, label: `Etapa ${i + 4}` });
+    formSteps.push({ type: "stage", stageId: s.id, label: s.label || `Etapa ${i + 4}` });
   });
 
   const totalSteps = formSteps.length;
