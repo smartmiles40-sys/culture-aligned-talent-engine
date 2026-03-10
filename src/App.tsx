@@ -13,6 +13,7 @@ import CandidateDetail from "./pages/CandidateDetail";
 import PublicApplicationForm from "./pages/PublicApplicationForm";
 import JobConfig from "./pages/JobConfig";
 import Settings from "./pages/Settings";
+import Rejected from "./pages/Rejected";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/candidatos" element={<ProtectedRoute><Candidates /></ProtectedRoute>} />
             <Route path="/candidatos/:id" element={<ProtectedRoute><CandidateDetail /></ProtectedRoute>} />
             <Route path="/vagas/:jobId/configurar" element={<ProtectedRoute><JobConfig /></ProtectedRoute>} />
+            <Route path="/reprovados" element={<ProtectedRoute><Rejected /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
