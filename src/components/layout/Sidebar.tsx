@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Briefcase, Users, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Briefcase, Users, UserX, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
