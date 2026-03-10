@@ -30,6 +30,7 @@ export default function Candidates() {
   const updateCandidate = useUpdateCandidate();
 
   const filtered = candidates.filter((c) => {
+    if (c.status === "rejected") return false;
     const job = jobs.find(j => j.id === c.job_id);
     if (filter !== "all" && job?.area !== filter) return false;
     if (classFilter !== "all" && c.classification !== classFilter) return false;
