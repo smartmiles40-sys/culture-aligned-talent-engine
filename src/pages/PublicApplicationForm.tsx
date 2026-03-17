@@ -429,6 +429,7 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
+        {currentStep?.type === "stage" && currentStep.stageId && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-foreground">{currentStep.label}</h2>
             {questions
