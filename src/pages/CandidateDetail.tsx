@@ -27,6 +27,10 @@ export default function CandidateDetail() {
   const [editEmail, setEditEmail] = useState("");
   const [analyzingCv, setAnalyzingCv] = useState(false);
   const [cvActionLoading, setCvActionLoading] = useState(false);
+  const [analyzingDisc, setAnalyzingDisc] = useState(false);
+  const [discScores, setDiscScores] = useState({ d: "", i: "", s: "", c: "" });
+  const [discInitialized, setDiscInitialized] = useState(false);
+  const discFileRef = useRef<HTMLInputElement>(null);
   const [showResponses, setShowResponses] = useState(false);
 
   const { data: candidate, isLoading } = useCandidate(id);
