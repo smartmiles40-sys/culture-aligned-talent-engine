@@ -85,6 +85,7 @@ export default function JobConfig() {
     setCultureRejection(job.culture_rejection_enabled);
     setIntroTitle((job as any).intro_title || "Sobre a Vaga");
     setIntroMessage((job as any).intro_message || "Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
+    setDiscTestUrl((job as any).disc_test_url || "");
     setInitialized(true);
   }
 
