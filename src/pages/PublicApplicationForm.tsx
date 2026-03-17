@@ -395,7 +395,40 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
-        {currentStep?.type === "stage" && currentStep.stageId && (
+        {currentStep?.type === "disc" && (
+          <div className="space-y-4">
+            <h2 className="font-display text-lg font-bold text-foreground">Teste DISC</h2>
+            {job.disc_test_url ? (
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="mb-2 text-sm text-foreground font-medium">Faça o teste DISC no link abaixo e depois envie o PDF com o resultado:</p>
+                <a href={job.disc_test_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+                  Abrir Teste DISC ↗
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Envie o PDF com o resultado do seu teste DISC.</p>
+            )}
+            <FileUpload
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/*"
+              label="Envie o PDF com o resultado do DISC"
+              hint="Formatos aceitos: PDF, PNG, JPG"
+              icon="file"
+              onChange={(file) => { setDiscFile(file); setDiscError(null); }}
+            />
+            {discError && (
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />{discError}
+              </div>
+            )}
+            {analyzing && (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <p className="text-sm text-foreground">Enviando arquivo DISC...</p>
+              </div>
+            )}
+          </div>
+        )}
+
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-foreground">{currentStep.label}</h2>
             {questions
