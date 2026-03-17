@@ -126,11 +126,16 @@ ${hasCustomCriteria
 - Experiências específicas com detalhes reais (empresas, situações, resultados)
 - Respostas que demonstram conhecimento prático da área
 
-## O QUE NÃO PENALIZAR:
-- Erros de digitação ou ortografia em formulário online (penalidade MÁXIMA: 5 pontos)
+## O QUE NÃO PENALIZAR PESADO (mas SEMPRE identificar):
+- Erros de digitação ou ortografia: penalidade MÁXIMA de 5 pontos no score, MAS liste os erros encontrados no campo "portuguese_errors"
 - Respostas curtas mas objetivas quando a pergunta permite resposta direta (ex: "Sim", "3 anos", "R$500k")
 - Nomes de ferramentas escritos incorretamente (ex: "pipieDrive" = Pipedrive, "WaSaller" = WhatsApp)
-- Informalidade adequada ao contexto da vaga
+
+## IDENTIFICAÇÃO DE ERROS DE PORTUGUÊS (OBRIGATÓRIO):
+- SEMPRE analise as respostas procurando erros de ortografia, concordância, regência, acentuação e pontuação.
+- Liste TODOS os erros encontrados no campo "portuguese_errors" da tool, mesmo que não penalize no score.
+- Se não encontrar erros, retorne uma lista vazia.
+- Exemplos de erros: "adépto" (adepto), "concerteza" (com certeza), "mim fazer" (eu fazer), falta de acentos, etc.
 
 ## SINAIS DE ALERTA (score deve ser BAIXO, 0-30):
 - Respostas que NÃO respondem a pergunta feita
