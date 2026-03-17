@@ -59,10 +59,12 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          evaluation_criteria: string | null
           id: string
           is_active: boolean | null
           is_eliminatory: boolean | null
           name: string
+          reference_material: string | null
           stage_key: string
           suggested_weight: number | null
           updated_at: string
@@ -70,10 +72,12 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          evaluation_criteria?: string | null
           id?: string
           is_active?: boolean | null
           is_eliminatory?: boolean | null
           name: string
+          reference_material?: string | null
           stage_key: string
           suggested_weight?: number | null
           updated_at?: string
@@ -81,10 +85,12 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          evaluation_criteria?: string | null
           id?: string
           is_active?: boolean | null
           is_eliminatory?: boolean | null
           name?: string
+          reference_material?: string | null
           stage_key?: string
           suggested_weight?: number | null
           updated_at?: string
@@ -306,12 +312,14 @@ export type Database = {
       job_stages: {
         Row: {
           created_at: string
+          evaluation_criteria: string | null
           id: string
           is_eliminatory: boolean | null
           is_enabled: boolean | null
           job_id: string
           label: string
           min_score: number | null
+          reference_material: string | null
           source_block_id: string | null
           stage_key: string
           stage_order: number
@@ -319,12 +327,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          evaluation_criteria?: string | null
           id?: string
           is_eliminatory?: boolean | null
           is_enabled?: boolean | null
           job_id: string
           label: string
           min_score?: number | null
+          reference_material?: string | null
           source_block_id?: string | null
           stage_key: string
           stage_order: number
@@ -332,12 +342,14 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          evaluation_criteria?: string | null
           id?: string
           is_eliminatory?: boolean | null
           is_enabled?: boolean | null
           job_id?: string
           label?: string
           min_score?: number | null
+          reference_material?: string | null
           source_block_id?: string | null
           stage_key?: string
           stage_order?: number
