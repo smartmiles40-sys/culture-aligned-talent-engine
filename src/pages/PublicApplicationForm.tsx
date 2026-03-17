@@ -160,9 +160,35 @@ export default function PublicApplicationForm() {
     }
   };
 
+  const handleDiscUpload = async () => {
+    if (!discFile) {
+      setDiscError("Por favor, envie o PDF com o resultado do DISC.");
+      return;
+    }
+    setAnalyzing(true);
+    setDiscError(null);
+    try {
+      const sanitizedName = discFile.name
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const fileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
+      const { error: uploadError } = await supabase.storage.from("disc-files").upload(fileName, discFile);
+      if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
+      setFormData(prev => ({ ...prev, __disc_file_url: fileName }));
+      setStep(step + 1);
+    } catch (e: any) {
+      setDiscError(e.message);
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep?.type === "cv") {
       handleCvUpload();
+    } else if (currentStep?.type === "disc") {
+      handleDiscUpload();
     } else {
       setStep(step + 1);
     }
