@@ -70,6 +70,8 @@ export default function JobConfig() {
   const [cultureRejection, setCultureRejection] = useState(true);
   const [introTitle, setIntroTitle] = useState("Sobre a Vaga");
   const [introMessage, setIntroMessage] = useState("Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
+  const [discTestUrl, setDiscTestUrl] = useState("");
+  const [initialized, setInitialized] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   if (job && !initialized) {
