@@ -351,6 +351,30 @@ export default function JobConfig() {
                               </div>
                             )}
                           </div>
+
+                          {/* Critérios de Avaliação da IA (override por vaga) */}
+                          <div className="mb-3">
+                            <label className="mb-1 block text-xs font-semibold text-foreground">Critérios de Avaliação da IA</label>
+                            <p className="mb-1 text-[10px] text-muted-foreground">Instruções específicas para a IA avaliar esta etapa nesta vaga. Herdado do template global, editável aqui.</p>
+                            <textarea
+                              value={(stage as any).evaluation_criteria || ""}
+                              onChange={(e) => updateStage.mutate({ id: stage.id, evaluation_criteria: e.target.value || null } as any)}
+                              placeholder="Critérios específicos de avaliação para esta etapa..."
+                              className="min-h-[80px] w-full rounded-lg border border-input bg-background p-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+
+                          {/* Material de Referência (override por vaga) */}
+                          <div className="mb-3">
+                            <label className="mb-1 block text-xs font-semibold text-foreground">Material de Referência</label>
+                            <p className="mb-1 text-[10px] text-muted-foreground">Material de apoio que a IA deve considerar (manual de cultura, diretrizes, etc.).</p>
+                            <textarea
+                              value={(stage as any).reference_material || ""}
+                              onChange={(e) => updateStage.mutate({ id: stage.id, reference_material: e.target.value || null } as any)}
+                              placeholder="Cole aqui trechos do manual de cultura, valores da empresa, etc."
+                              className="min-h-[80px] w-full rounded-lg border border-input bg-background p-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
                           <div className="space-y-2">
                             {stageQuestions.map((q) => (
                               <div key={q.id} className="flex items-start gap-2 rounded-md bg-muted/50 p-2">

@@ -28,7 +28,7 @@ serve(async (req) => {
     // Fetch enabled stages with weight > 0, excluding cv_upload and application
     const { data: stages } = await supabase
       .from("job_stages")
-      .select("id, stage_key, label, weight")
+      .select("id, stage_key, label, weight, evaluation_criteria, reference_material")
       .eq("job_id", jobId)
       .eq("is_enabled", true)
       .gt("weight", 0)
@@ -87,18 +87,31 @@ serve(async (req) => {
 
       if (!qaPairs) continue;
 
+      const hasCustomCriteria = !!stage.evaluation_criteria;
+      const hasReferenceMaterial = !!stage.reference_material;
+
+      const customCriteriaBlock = hasCustomCriteria
+        ? `\n## CRITÉRIOS ESPECÍFICOS DESTA ETAPA (configurados pelo recrutador — PRIORIDADE MÁXIMA):\n${stage.evaluation_criteria}\n\nAvalie as respostas ESTRITAMENTE com base nos critérios acima.\n`
+        : "";
+
+      const referenceMaterialBlock = hasReferenceMaterial
+        ? `\n## MATERIAL DE REFERÊNCIA (estude antes de avaliar):\n${stage.reference_material}\n`
+        : "";
+
       const prompt = `Você é um avaliador justo e criterioso de candidatos. Sua função é identificar candidatos com potencial real para a vaga.
 
 Avalie as respostas do candidato para a etapa "${stage.label}" da vaga "${job.title}" (área: ${job.area || "N/A"}).
 
 Competências desejadas: ${job.required_skills?.join(", ") || "N/A"}
 Perfil comportamental: ${job.behavioral_profile || "N/A"}
-
+${customCriteriaBlock}${referenceMaterialBlock}
 ## Respostas do Candidato:
 ${qaPairs}
 
 ## PRINCÍPIO FUNDAMENTAL:
-Avalie o CONTEÚDO e a SUBSTÂNCIA das respostas, não a forma. Candidatos preenchem formulários online em celulares — erros de digitação são normais e NÃO indicam incompetência.
+${hasCustomCriteria
+  ? "Use os CRITÉRIOS ESPECÍFICOS configurados acima como base principal da avaliação. Eles têm prioridade sobre as regras genéricas abaixo."
+  : "Avalie o CONTEÚDO e a SUBSTÂNCIA das respostas, não a forma. Candidatos preenchem formulários online em celulares — erros de digitação são normais e NÃO indicam incompetência."}
 
 ## CRITÉRIOS DE PONTUAÇÃO (área: ${job.area || "geral"}):
 - 0-20: Respostas vazias, sem sentido, texto aleatório, ou completamente irrelevantes para a pergunta

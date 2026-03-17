@@ -196,6 +196,7 @@ export default function PublicApplicationForm() {
           body: {
             cvPath: formData.__cv_url,
             candidateId,
+            jobId,
             jobTitle: job.title,
             jobArea: job.area,
             requiredSkills: job.required_skills,

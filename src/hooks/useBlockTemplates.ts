@@ -10,6 +10,8 @@ export interface BlockTemplate {
   suggested_weight: number;
   is_eliminatory: boolean;
   is_active: boolean;
+  evaluation_criteria: string | null;
+  reference_material: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -201,6 +203,8 @@ export function useAddBlockToJob() {
           is_enabled: true,
           is_eliminatory: block.is_eliminatory,
           source_block_id: block.id,
+          evaluation_criteria: block.evaluation_criteria,
+          reference_material: block.reference_material,
         }])
         .select()
         .single();

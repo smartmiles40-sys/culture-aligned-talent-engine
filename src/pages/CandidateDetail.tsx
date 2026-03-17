@@ -151,6 +151,7 @@ export default function CandidateDetail() {
         body: {
           cvPath: candidate.cv_url,
           candidateId: candidate.id,
+          jobId: candidate.job_id,
           jobTitle: job.title,
           jobArea: job.area,
           requiredSkills: job.required_skills,

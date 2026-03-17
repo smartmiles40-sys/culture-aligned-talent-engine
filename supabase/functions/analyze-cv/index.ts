@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { cvPath, candidateId, jobTitle, jobArea, requiredSkills, behavioralProfile } = await req.json();
+    const { cvPath, candidateId, jobTitle, jobArea, requiredSkills, behavioralProfile, jobId } = await req.json();
 
     if (!cvPath || !jobTitle) {
       return new Response(JSON.stringify({ error: "cvPath and jobTitle are required" }), {
@@ -55,7 +55,32 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Fetch evaluation criteria from cv_upload stage if jobId is provided
+    let cvEvaluationCriteria = "";
+    let cvReferenceMaterial = "";
+    if (jobId) {
+      const { data: cvStageData } = await supabase
+        .from("job_stages")
+        .select("evaluation_criteria, reference_material")
+        .eq("job_id", jobId)
+        .eq("stage_key", "cv_upload")
+        .single();
+      if (cvStageData) {
+        cvEvaluationCriteria = cvStageData.evaluation_criteria || "";
+        cvReferenceMaterial = cvStageData.reference_material || "";
+      }
+    }
+
+    const customCriteriaBlock = cvEvaluationCriteria
+      ? `\n## CRITÉRIOS ESPECÍFICOS CONFIGURADOS PELO RECRUTADOR (PRIORIDADE MÁXIMA):\n${cvEvaluationCriteria}\n\nAplique estes critérios RIGOROSAMENTE na análise.\n`
+      : "";
+
+    const referenceMaterialBlock = cvReferenceMaterial
+      ? `\n## MATERIAL DE REFERÊNCIA:\n${cvReferenceMaterial}\n`
+      : "";
+
     const prompt = `Você é um avaliador EXTREMAMENTE RIGOROSO e CRITERIOSO de currículos para recrutamento. Sua função é proteger a empresa de contratações ruins.
+${customCriteriaBlock}${referenceMaterialBlock}
 
 ## REGRAS CRÍTICAS DE VALIDAÇÃO (aplicar ANTES de qualquer análise):
 
