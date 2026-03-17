@@ -121,11 +121,18 @@ export default function PublicApplicationForm() {
     { type: "cv", label: "Currículo" },
   ];
 
-  // Add stages that have questions (skip cv_upload and disc since they're handled separately)
-  const questionStages = stages.filter(s => s.stage_key !== "cv_upload" && s.stage_key !== "disc");
+  // Add stages that have questions (skip cv_upload, disc, and application since personal data is handled separately)
+  const questionStages = stages.filter(s => s.stage_key !== "cv_upload" && s.stage_key !== "disc" && s.stage_key !== "application");
   questionStages.forEach((s, i) => {
     formSteps.push({ type: "stage", stageId: s.id, label: s.label || `Etapa ${i + 4}` });
   });
+
+  // Get extra questions from the application stage (exclude duplicates: nome, email, telefone)
+  const applicationStage = stages.find(s => s.stage_key === "application");
+  const applicationExtraQuestions = applicationStage
+    ? questions.filter(q => q.stage_id === applicationStage.id && 
+        !["nome completo", "e-mail", "telefone"].includes(q.question_text.toLowerCase().trim()))
+    : [];
 
   // Add DISC step at the end if DISC stage is enabled
   if (discStage) {
