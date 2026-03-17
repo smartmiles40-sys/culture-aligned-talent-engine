@@ -113,18 +113,24 @@ export default function PublicApplicationForm() {
     );
   }
 
-  // Build form steps: always personal + CV first, then stage-based steps
-  const formSteps: { type: "details" | "personal" | "cv" | "stage"; stageId?: string; label: string }[] = [
+  // Build form steps
+  const discStage = stages.find(s => s.stage_key === "disc");
+  const formSteps: { type: "details" | "personal" | "cv" | "disc" | "stage"; stageId?: string; label: string }[] = [
     { type: "details", label: "Sobre a Vaga" },
     { type: "personal", label: "Dados Pessoais" },
     { type: "cv", label: "Currículo" },
   ];
 
-  // Add stages that have questions (skip cv_upload since it's handled separately)
-  const questionStages = stages.filter(s => s.stage_key !== "cv_upload");
+  // Add stages that have questions (skip cv_upload and disc since they're handled separately)
+  const questionStages = stages.filter(s => s.stage_key !== "cv_upload" && s.stage_key !== "disc");
   questionStages.forEach((s, i) => {
     formSteps.push({ type: "stage", stageId: s.id, label: s.label || `Etapa ${i + 4}` });
   });
+
+  // Add DISC step at the end if DISC stage is enabled
+  if (discStage) {
+    formSteps.push({ type: "disc", label: "Teste DISC" });
+  }
 
   const totalSteps = formSteps.length;
   const currentStep = formSteps[step];
