@@ -10,6 +10,8 @@ export interface BlockTemplate {
   suggested_weight: number;
   is_eliminatory: boolean;
   is_active: boolean;
+  evaluation_criteria: string | null;
+  reference_material: string | null;
   created_at: string;
   updated_at: string;
 }
