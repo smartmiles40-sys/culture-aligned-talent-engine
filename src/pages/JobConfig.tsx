@@ -231,6 +231,11 @@ export default function JobConfig() {
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Perfil Comportamental</label>
                 <input value={behavioralProfile} onChange={(e) => setBehavioralProfile(e.target.value)} className={inputClass} />
               </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Link do Teste DISC</label>
+                <input value={discTestUrl} onChange={(e) => setDiscTestUrl(e.target.value)} placeholder="https://... (link para o candidato fazer o teste)" className={inputClass} />
+                <p className="mt-1 text-[10px] text-muted-foreground">Este link ficará visível na ficha do candidato para o recrutador enviar ao candidato</p>
+              </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={cultureRejection} onChange={(e) => setCultureRejection(e.target.checked)} className="h-4 w-4 rounded border-input" />
                 <label className="text-sm text-foreground">Rejeição por cultura ativa</label>
