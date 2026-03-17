@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { cvPath, candidateId, jobTitle, jobArea, requiredSkills, behavioralProfile } = await req.json();
+    const { cvPath, candidateId, jobTitle, jobArea, requiredSkills, behavioralProfile, jobId } = await req.json();
 
     if (!cvPath || !jobTitle) {
       return new Response(JSON.stringify({ error: "cvPath and jobTitle are required" }), {
