@@ -17,6 +17,7 @@ interface JobData {
   behavioral_profile: string | null;
   intro_title: string | null;
   intro_message: string | null;
+  disc_test_url: string | null;
 }
 
 interface StageData {
@@ -48,6 +49,8 @@ export default function PublicApplicationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
+  const [discFile, setDiscFile] = useState<File | null>(null);
+  const [discError, setDiscError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -110,18 +113,24 @@ export default function PublicApplicationForm() {
     );
   }
 
-  // Build form steps: always personal + CV first, then stage-based steps
-  const formSteps: { type: "details" | "personal" | "cv" | "stage"; stageId?: string; label: string }[] = [
+  // Build form steps
+  const discStage = stages.find(s => s.stage_key === "disc");
+  const formSteps: { type: "details" | "personal" | "cv" | "disc" | "stage"; stageId?: string; label: string }[] = [
     { type: "details", label: "Sobre a Vaga" },
     { type: "personal", label: "Dados Pessoais" },
     { type: "cv", label: "Currículo" },
   ];
 
-  // Add stages that have questions (skip cv_upload since it's handled separately)
-  const questionStages = stages.filter(s => s.stage_key !== "cv_upload");
+  // Add stages that have questions (skip cv_upload and disc since they're handled separately)
+  const questionStages = stages.filter(s => s.stage_key !== "cv_upload" && s.stage_key !== "disc");
   questionStages.forEach((s, i) => {
     formSteps.push({ type: "stage", stageId: s.id, label: s.label || `Etapa ${i + 4}` });
   });
+
+  // Add DISC step at the end if DISC stage is enabled
+  if (discStage) {
+    formSteps.push({ type: "disc", label: "Teste DISC" });
+  }
 
   const totalSteps = formSteps.length;
   const currentStep = formSteps[step];
@@ -151,9 +160,35 @@ export default function PublicApplicationForm() {
     }
   };
 
+  const handleDiscUpload = async () => {
+    if (!discFile) {
+      setDiscError("Por favor, envie o PDF com o resultado do DISC.");
+      return;
+    }
+    setAnalyzing(true);
+    setDiscError(null);
+    try {
+      const sanitizedName = discFile.name
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const fileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
+      const { error: uploadError } = await supabase.storage.from("disc-files").upload(fileName, discFile);
+      if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
+      setFormData(prev => ({ ...prev, __disc_file_url: fileName }));
+      setStep(step + 1);
+    } catch (e: any) {
+      setDiscError(e.message);
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep?.type === "cv") {
       handleCvUpload();
+    } else if (currentStep?.type === "disc") {
+      handleDiscUpload();
     } else {
       setStep(step + 1);
     }
@@ -202,6 +237,20 @@ export default function PublicApplicationForm() {
             requiredSkills: job.required_skills,
             behavioralProfile: job.behavioral_profile,
           },
+        }).catch(() => {});
+      }
+
+      // Save DISC file if uploaded
+      if (formData.__disc_file_url) {
+        await supabase.from("candidate_disc").insert([{
+          candidate_id: candidateId,
+          file_url: formData.__disc_file_url,
+          source: "formulario",
+        }]);
+
+        // Trigger DISC analysis in background
+        supabase.functions.invoke("analyze-disc", {
+          body: { candidateId },
         }).catch(() => {});
       }
 
@@ -346,6 +395,40 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
+        {currentStep?.type === "disc" && (
+          <div className="space-y-4">
+            <h2 className="font-display text-lg font-bold text-foreground">Teste DISC</h2>
+            {job.disc_test_url ? (
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="mb-2 text-sm text-foreground font-medium">Faça o teste DISC no link abaixo e depois envie o PDF com o resultado:</p>
+                <a href={job.disc_test_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+                  Abrir Teste DISC ↗
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Envie o PDF com o resultado do seu teste DISC.</p>
+            )}
+            <FileUpload
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/*"
+              label="Envie o PDF com o resultado do DISC"
+              hint="Formatos aceitos: PDF, PNG, JPG"
+              icon="file"
+              onChange={(file) => { setDiscFile(file); setDiscError(null); }}
+            />
+            {discError && (
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />{discError}
+              </div>
+            )}
+            {analyzing && (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <p className="text-sm text-foreground">Enviando arquivo DISC...</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {currentStep?.type === "stage" && currentStep.stageId && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-foreground">{currentStep.label}</h2>
@@ -404,11 +487,11 @@ export default function PublicApplicationForm() {
           {step < totalSteps - 1 ? (
             <button
               onClick={handleNext}
-              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "disc" && !discFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
-              {currentStep?.type === "cv" ? (analyzing ? "Enviando..." : "Enviar Currículo") : "Próximo"}
+              {currentStep?.type === "cv" ? (analyzing ? "Enviando..." : "Enviar Currículo") : currentStep?.type === "disc" ? (analyzing ? "Enviando..." : "Enviar DISC") : "Próximo"}
             </button>
           ) : (
             <button
