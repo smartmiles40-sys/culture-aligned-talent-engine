@@ -487,7 +487,7 @@ export default function PublicApplicationForm() {
           {step < totalSteps - 1 ? (
             <button
               onClick={handleNext}
-              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "disc" && !discFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
