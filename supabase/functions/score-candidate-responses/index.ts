@@ -161,14 +161,19 @@ SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para re
             type: "function",
             function: {
               name: "score_stage",
-              description: "Retorna a nota e justificativa para a etapa avaliada",
+              description: "Retorna a nota, justificativa e erros de português encontrados",
               parameters: {
                 type: "object",
                 properties: {
                   score: { type: "number", description: "Nota de 0 a 100" },
-                  justification: { type: "string", description: "Justificativa breve da nota (máx 200 caracteres)" },
+                  justification: { type: "string", description: "Justificativa da nota (máx 300 caracteres)" },
+                  portuguese_errors: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Lista de erros de português encontrados nas respostas. Ex: ['adépto (correto: adepto)', 'concerteza (correto: com certeza)']. Lista vazia se nenhum erro."
+                  },
                 },
-                required: ["score", "justification"],
+                required: ["score", "justification", "portuguese_errors"],
                 additionalProperties: false,
               },
             },
