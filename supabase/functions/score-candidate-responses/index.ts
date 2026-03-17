@@ -28,7 +28,7 @@ serve(async (req) => {
     // Fetch enabled stages with weight > 0, excluding cv_upload and application
     const { data: stages } = await supabase
       .from("job_stages")
-      .select("id, stage_key, label, weight")
+      .select("id, stage_key, label, weight, evaluation_criteria, reference_material")
       .eq("job_id", jobId)
       .eq("is_enabled", true)
       .gt("weight", 0)
