@@ -240,6 +240,20 @@ export default function PublicApplicationForm() {
         }).catch(() => {});
       }
 
+      // Save DISC file if uploaded
+      if (formData.__disc_file_url) {
+        await supabase.from("candidate_disc").insert([{
+          candidate_id: candidateId,
+          file_url: formData.__disc_file_url,
+          source: "formulario",
+        }]);
+
+        // Trigger DISC analysis in background
+        supabase.functions.invoke("analyze-disc", {
+          body: { candidateId },
+        }).catch(() => {});
+      }
+
       // Trigger AI scoring of responses in background
       supabase.functions.invoke("score-candidate-responses", {
         body: { candidateId, jobId },
