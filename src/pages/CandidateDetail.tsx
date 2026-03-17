@@ -28,7 +28,6 @@ export default function CandidateDetail() {
   const [analyzingCv, setAnalyzingCv] = useState(false);
   const [cvActionLoading, setCvActionLoading] = useState(false);
   const [analyzingDisc, setAnalyzingDisc] = useState(false);
-  const discFileRef = useRef<HTMLInputElement>(null);
   const [showResponses, setShowResponses] = useState(false);
 
   const { data: candidate, isLoading } = useCandidate(id);
