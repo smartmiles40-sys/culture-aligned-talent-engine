@@ -379,6 +379,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           culture_rejection_enabled: boolean | null
+          disc_test_url: string | null
           id: string
           intro_message: string | null
           intro_title: string | null
@@ -396,6 +397,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           culture_rejection_enabled?: boolean | null
+          disc_test_url?: string | null
           id?: string
           intro_message?: string | null
           intro_title?: string | null
@@ -413,6 +415,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           culture_rejection_enabled?: boolean | null
+          disc_test_url?: string | null
           id?: string
           intro_message?: string | null
           intro_title?: string | null

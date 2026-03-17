@@ -70,6 +70,7 @@ export default function JobConfig() {
   const [cultureRejection, setCultureRejection] = useState(true);
   const [introTitle, setIntroTitle] = useState("Sobre a Vaga");
   const [introMessage, setIntroMessage] = useState("Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
+  const [discTestUrl, setDiscTestUrl] = useState("");
   const [initialized, setInitialized] = useState(false);
 
   if (job && !initialized) {
@@ -83,6 +84,7 @@ export default function JobConfig() {
     setCultureRejection(job.culture_rejection_enabled);
     setIntroTitle((job as any).intro_title || "Sobre a Vaga");
     setIntroMessage((job as any).intro_message || "Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
+    setDiscTestUrl((job as any).disc_test_url || "");
     setInitialized(true);
   }
 
@@ -115,6 +117,7 @@ export default function JobConfig() {
       culture_rejection_enabled: cultureRejection,
       intro_title: introTitle || "Sobre a Vaga",
       intro_message: introMessage || "",
+      disc_test_url: discTestUrl || null,
     } as any);
   };
 
@@ -227,6 +230,11 @@ export default function JobConfig() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Perfil Comportamental</label>
                 <input value={behavioralProfile} onChange={(e) => setBehavioralProfile(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Link do Teste DISC</label>
+                <input value={discTestUrl} onChange={(e) => setDiscTestUrl(e.target.value)} placeholder="https://... (link para o candidato fazer o teste)" className={inputClass} />
+                <p className="mt-1 text-[10px] text-muted-foreground">Este link ficará visível na ficha do candidato para o recrutador enviar ao candidato</p>
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={cultureRejection} onChange={(e) => setCultureRejection(e.target.checked)} className="h-4 w-4 rounded border-input" />
