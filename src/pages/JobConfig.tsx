@@ -72,7 +72,6 @@ export default function JobConfig() {
   const [introMessage, setIntroMessage] = useState("Leia com atenção as informações abaixo antes de iniciar sua candidatura.");
   const [discTestUrl, setDiscTestUrl] = useState("");
   const [initialized, setInitialized] = useState(false);
-  const [initialized, setInitialized] = useState(false);
 
   if (job && !initialized) {
     setTitle(job.title);
