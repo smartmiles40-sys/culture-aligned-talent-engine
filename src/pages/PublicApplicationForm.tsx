@@ -17,6 +17,7 @@ interface JobData {
   behavioral_profile: string | null;
   intro_title: string | null;
   intro_message: string | null;
+  disc_test_url: string | null;
 }
 
 interface StageData {
