@@ -203,13 +203,17 @@ SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para re
       }
 
       const score = Math.max(0, Math.min(100, Math.round(parsed.score)));
-      results.push({ stageId: stage.id, score, justification: parsed.justification });
+      const portugueseErrors = parsed.portuguese_errors || [];
+      const errorsText = portugueseErrors.length > 0
+        ? `\n\nErros de português identificados (${portugueseErrors.length}): ${portugueseErrors.join("; ")}`
+        : "";
+      results.push({ stageId: stage.id, score, justification: parsed.justification, portugueseErrors });
 
       await supabase.from("candidate_evaluations").insert({
         candidate_id: candidateId,
         stage_id: stage.id,
         score,
-        notes: `Avaliação IA: ${parsed.justification}`,
+        notes: `Avaliação IA: ${parsed.justification}${errorsText}`,
       });
     }
 
