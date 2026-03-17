@@ -374,6 +374,31 @@ export default function PublicApplicationForm() {
                 <input value={formData.phone || ""} onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))} className={inputClass} />
               </div>
             </div>
+            {applicationExtraQuestions.length > 0 && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2">
+                {applicationExtraQuestions.map((q) => (
+                  <div key={q.id}>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
+                      {q.question_text}{q.is_required && " *"}
+                    </label>
+                    {q.field_type === "textarea" ? (
+                      <textarea
+                        value={formData[`q_${q.id}`] || ""}
+                        onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                        className={textareaClass}
+                      />
+                    ) : (
+                      <input
+                        type={q.field_type === "url" ? "url" : "text"}
+                        value={formData[`q_${q.id}`] || ""}
+                        onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                        className={inputClass}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
