@@ -118,6 +118,7 @@ export default function JobConfig() {
       culture_rejection_enabled: cultureRejection,
       intro_title: introTitle || "Sobre a Vaga",
       intro_message: introMessage || "",
+      disc_test_url: discTestUrl || null,
     } as any);
   };
 
