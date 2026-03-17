@@ -3,9 +3,9 @@ import { useCandidate, useUpdateCandidate, useDeleteCandidate } from "@/hooks/us
 import { useJob } from "@/hooks/useJobs";
 import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare, CheckCircle2, XCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ export default function CandidateDetail() {
   const [editEmail, setEditEmail] = useState("");
   const [analyzingCv, setAnalyzingCv] = useState(false);
   const [cvActionLoading, setCvActionLoading] = useState(false);
+  const [showResponses, setShowResponses] = useState(false);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
@@ -280,32 +281,6 @@ export default function CandidateDetail() {
                 {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
-            {/* Show all candidate responses as personal data fields */}
-            {candidateResponses.map(r => {
-              const value = r.response_value || "";
-              const qLower = r.question_text.toLowerCase();
-              const urlMatch = value.match(/https?:\/\/\S+/i);
-              const isSocialHandle = /^@?\w+/.test(value) && (qLower.includes("instagram") || qLower.includes("linkedin") || qLower.includes("github"));
-              let href = urlMatch?.[0] || "";
-              if (!href && isSocialHandle) {
-                const handle = value.replace(/^@/, "");
-                if (qLower.includes("instagram")) href = `https://instagram.com/${handle}`;
-                else if (qLower.includes("linkedin")) href = `https://linkedin.com/in/${handle}`;
-                else if (qLower.includes("github")) href = `https://github.com/${handle}`;
-              }
-              return (
-                <div key={r.id}>
-                  <span className="text-xs font-semibold text-muted-foreground">{r.question_text}</span>
-                  {href ? (
-                    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-info hover:underline break-all">
-                      <ExternalLink className="h-3 w-3 flex-shrink-0" /> {value}
-                    </a>
-                  ) : (
-                    <p className="text-sm text-foreground">{value || "—"}</p>
-                  )}
-                </div>
-              );
-            })}
           </div>
         </div>
 
@@ -529,13 +504,20 @@ export default function CandidateDetail() {
 
         {/* Respostas do Candidato */}
         {candidateResponses.length > 0 && (
-          <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
-            <div className="mb-4 flex items-center gap-2">
+          <div className="mt-6 rounded-xl border border-border bg-card shadow-card">
+            <button
+              onClick={() => setShowResponses(!showResponses)}
+              className="flex w-full items-center gap-2 p-5 text-left hover:bg-muted/30 transition-colors rounded-xl"
+            >
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <h2 className="font-display text-base font-bold text-foreground">Respostas do Candidato</h2>
+              <h2 className="font-display text-base font-bold text-foreground">Respostas do Formulário</h2>
               <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{candidateResponses.length} respostas</span>
-            </div>
-            {(() => {
+              <div className="ml-auto">
+                {showResponses ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+              </div>
+            </button>
+            {showResponses && (
+              <div className="border-t border-border px-5 pb-5 pt-3">{(() => {
               const grouped = candidateResponses.reduce((acc, r) => {
                 if (!acc[r.stage_label]) acc[r.stage_label] = [];
                 acc[r.stage_label].push(r);
@@ -577,7 +559,8 @@ export default function CandidateDetail() {
                   </div>
                 </div>
               ));
-            })()}
+            })()}</div>
+            )}
           </div>
         )}
         {scorableStages.length > 0 && (
