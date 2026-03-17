@@ -559,7 +559,8 @@ export default function CandidateDetail() {
                   </div>
                 </div>
               ));
-            })()}
+            })()}</div>
+            )}
           </div>
         )}
         {scorableStages.length > 0 && (
