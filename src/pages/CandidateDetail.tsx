@@ -370,13 +370,23 @@ export default function CandidateDetail() {
         )}
 
         {/* CV Analysis */}
-        {candidate.cv_analysis && typeof candidate.cv_analysis === "object" && (
+        {candidate.cv_analysis && typeof candidate.cv_analysis === "object" && (() => {
+          const cvStage = stages.find(s => s.stage_key === "cv_upload");
+          const cvWeight = cvStage?.weight ?? 0;
+          return (
           <div className="mb-6 rounded-xl border border-border bg-card p-5 shadow-card">
-            <h2 className="mb-3 font-display text-base font-bold text-foreground">Análise de CV (IA)</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-base font-bold text-foreground">Análise de CV (IA)</h2>
+              {cvWeight === 0 && (
+                <span className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                  <Info className="h-3 w-3" /> Peso 0 — não afeta o score final
+                </span>
+              )}
+            </div>
             <div className="mb-3 flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 px-3 py-1.5 text-center">
                 <div className="font-display text-2xl font-bold text-foreground">{(candidate.cv_analysis as any).score ?? "—"}</div>
-                <div className="text-xs text-muted-foreground">Score</div>
+                <div className="text-xs text-muted-foreground">Score CV</div>
               </div>
               <span className={cn(
                 "rounded-md px-2 py-1 text-xs font-semibold",
@@ -417,7 +427,8 @@ export default function CandidateDetail() {
               )}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Scores editing */}
         <div className="rounded-xl border border-border bg-card p-5 shadow-card">
