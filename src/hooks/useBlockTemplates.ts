@@ -203,6 +203,8 @@ export function useAddBlockToJob() {
           is_enabled: true,
           is_eliminatory: block.is_eliminatory,
           source_block_id: block.id,
+          evaluation_criteria: block.evaluation_criteria,
+          reference_material: block.reference_material,
         }])
         .select()
         .single();

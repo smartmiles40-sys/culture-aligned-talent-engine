@@ -12,6 +12,8 @@ export interface DbStage {
   is_enabled: boolean;
   is_eliminatory: boolean;
   min_score: number | null;
+  evaluation_criteria: string | null;
+  reference_material: string | null;
   created_at: string;
 }
 

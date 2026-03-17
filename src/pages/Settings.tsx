@@ -307,6 +307,30 @@ function BlockLibrary() {
                     </div>
                   </div>
 
+                  {/* Critérios de Avaliação da IA */}
+                  <div className="mb-3">
+                    <label className="mb-1 block text-xs font-semibold text-foreground">Critérios de Avaliação da IA</label>
+                    <p className="mb-1.5 text-[10px] text-muted-foreground">Descreva exatamente o que a IA deve avaliar nesta etapa, como pontuar, o que valorizar e penalizar.</p>
+                    <textarea
+                      value={block.evaluation_criteria || ""}
+                      onChange={(e) => updateBlock.mutate({ id: block.id, evaluation_criteria: e.target.value || null })}
+                      placeholder="Ex: Avaliar aderência aos valores STFEV. Valorizar respostas que demonstrem protagonismo e senso de dono. Penalizar respostas genéricas sem exemplos práticos..."
+                      className="min-h-[100px] w-full rounded-lg border border-input bg-background p-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+
+                  {/* Material de Referência */}
+                  <div className="mb-3">
+                    <label className="mb-1 block text-xs font-semibold text-foreground">Material de Referência</label>
+                    <p className="mb-1.5 text-[10px] text-muted-foreground">Cole trechos do manual de cultura, diretrizes internas, perfil comportamental esperado, etc.</p>
+                    <textarea
+                      value={block.reference_material || ""}
+                      onChange={(e) => updateBlock.mutate({ id: block.id, reference_material: e.target.value || null })}
+                      placeholder="Ex: Valores STFEV: S - Senso de Dono: o colaborador age como se a empresa fosse dele... T - Transparência: comunicação aberta e honesta..."
+                      className="min-h-[100px] w-full rounded-lg border border-input bg-background p-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     {bQuestions.map((q) => (
                       <div key={q.id} className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5">
