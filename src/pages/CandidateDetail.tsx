@@ -481,21 +481,23 @@ export default function CandidateDetail() {
         </div>
 
         {/* DISC */}
+        {disc && (
         <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-base font-bold text-foreground">DISC / Temperamento</h2>
             <div className="flex items-center gap-2">
-              {(job as any)?.disc_test_url && (
-                <a
-                  href={(job as any).disc_test_url}
-                  target="_blank"
-                  rel="noreferrer"
+              {disc.file_url && (
+                <button
+                  onClick={async () => {
+                    const { data } = await supabase.storage.from("disc-files").createSignedUrl(disc.file_url!, 600);
+                    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                  }}
                   className="flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/80"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" /> Link do Teste DISC
-                </a>
+                  <Download className="h-3.5 w-3.5" /> Ver PDF DISC
+                </button>
               )}
-              {disc && (disc.d_score != null || disc.i_score != null) && (
+              {(disc.d_score != null || disc.i_score != null) && (
                 <button
                   onClick={async () => {
                     setAnalyzingDisc(true);
@@ -522,95 +524,20 @@ export default function CandidateDetail() {
             </div>
           </div>
 
-          {/* DISC Score inputs */}
+          {/* DISC Scores (read-only) */}
           <div className="mb-4 grid grid-cols-4 gap-3">
             {(["d", "i", "s", "c"] as const).map(key => {
               const discKey = `${key}_score` as "d_score" | "i_score" | "s_score" | "c_score";
               const currentVal = disc?.[discKey];
               return (
                 <div key={key} className="rounded-lg bg-muted p-3 text-center">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={currentVal ?? ""}
-                    placeholder="—"
-                    onChange={(e) => {
-                      const val = e.target.value ? Number(e.target.value) : null;
-                      upsertDisc.mutate({
-                        candidate_id: candidate.id,
-                        [discKey]: val,
-                      });
-                    }}
-                    className="w-full bg-transparent text-center font-display text-lg font-bold text-foreground focus:outline-none"
-                  />
+                  <div className="font-display text-lg font-bold text-foreground">
+                    {currentVal != null ? currentVal : "—"}
+                  </div>
                   <div className="text-xs text-muted-foreground">{key.toUpperCase()}</div>
                 </div>
               );
             })}
-          </div>
-
-          {/* Upload DISC PDF */}
-          <div className="mb-3 flex items-center gap-3">
-            <input
-              ref={discFileRef}
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const safeName = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]/g, "_");
-                const path = `${candidate.id}/${Date.now()}_${safeName}`;
-                const { error: upErr } = await supabase.storage.from("disc-files").upload(path, file);
-                if (upErr) {
-                  toast({ title: "Erro no upload", description: upErr.message, variant: "destructive" });
-                  return;
-                }
-                upsertDisc.mutate({ candidate_id: candidate.id, file_url: path });
-                toast({ title: "Arquivo DISC enviado!" });
-              }}
-            />
-            <button
-              onClick={() => discFileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
-            >
-              <Upload className="h-3.5 w-3.5" /> Upload PDF DISC
-            </button>
-            {disc?.file_url && (
-              <button
-                onClick={async () => {
-                  const { data } = await supabase.storage.from("disc-files").createSignedUrl(disc.file_url!, 600);
-                  if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-                }}
-                className="flex items-center gap-1.5 text-xs text-info hover:underline"
-              >
-                <Download className="h-3.5 w-3.5" /> Ver arquivo DISC
-              </button>
-            )}
-          </div>
-
-          {/* External URL input */}
-          <div className="mb-3">
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Link externo (resultado DISC)</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="url"
-                placeholder="https://..."
-                defaultValue={disc?.external_url || ""}
-                onBlur={(e) => {
-                  if (e.target.value !== (disc?.external_url || "")) {
-                    upsertDisc.mutate({ candidate_id: candidate.id, external_url: e.target.value || null });
-                  }
-                }}
-                className="h-8 flex-1 rounded-lg border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              {disc?.external_url && (
-                <a href={disc.external_url} target="_blank" rel="noreferrer" className="text-info hover:text-info/80">
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              )}
-            </div>
           </div>
 
           {/* DISC Analysis summary */}
@@ -630,6 +557,7 @@ export default function CandidateDetail() {
             </div>
           )}
         </div>
+        )}
 
         {/* Respostas do Candidato */}
         {candidateResponses.length > 0 && (
