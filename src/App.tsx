@@ -13,6 +13,7 @@ import CandidateDetail from "./pages/CandidateDetail";
 import PublicApplicationForm from "./pages/PublicApplicationForm";
 import JobConfig from "./pages/JobConfig";
 import Settings from "./pages/Settings";
+import Approved from "./pages/Approved";
 import Rejected from "./pages/Rejected";
 import NotFound from "./pages/NotFound";
 
