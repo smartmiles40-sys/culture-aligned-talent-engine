@@ -134,7 +134,7 @@ SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para re
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-pro",
           messages: [
             { role: "system", content: "Você é um avaliador de candidatos. Use a tool fornecida para retornar sua avaliação." },
             { role: "user", content: prompt },
