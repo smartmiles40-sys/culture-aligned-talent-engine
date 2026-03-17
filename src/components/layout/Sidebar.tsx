@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/vagas", icon: Briefcase, label: "Vagas" },
   { to: "/candidatos", icon: Users, label: "Candidatos" },
+  { to: "/aprovados", icon: UserCheck, label: "Aprovados" },
   { to: "/reprovados", icon: UserX, label: "Reprovados" },
 ];
 
