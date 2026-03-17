@@ -27,6 +27,7 @@ export default function CandidateDetail() {
   const [editEmail, setEditEmail] = useState("");
   const [analyzingCv, setAnalyzingCv] = useState(false);
   const [cvActionLoading, setCvActionLoading] = useState(false);
+  const [showResponses, setShowResponses] = useState(false);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
