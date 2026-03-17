@@ -49,6 +49,8 @@ export default function PublicApplicationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
+  const [discFile, setDiscFile] = useState<File | null>(null);
+  const [discError, setDiscError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const { toast } = useToast();
