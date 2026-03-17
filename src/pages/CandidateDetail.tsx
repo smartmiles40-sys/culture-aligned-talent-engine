@@ -3,7 +3,7 @@ import { useCandidate, useUpdateCandidate, useDeleteCandidate } from "@/hooks/us
 import { useJob } from "@/hooks/useJobs";
 import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, Upload, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
