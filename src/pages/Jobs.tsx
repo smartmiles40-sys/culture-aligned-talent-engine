@@ -75,13 +75,26 @@ export default function Jobs() {
           <h1 className="font-display text-3xl font-bold text-foreground">Vagas</h1>
           <p className="mt-1 text-sm text-muted-foreground">Gerencie as vagas e configure o processo seletivo</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
-        >
-          <Plus className="h-4 w-4" />
-          Nova Vaga
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const link = `${window.location.origin}/vagas-abertas`;
+              navigator.clipboard.writeText(link);
+              toast({ title: "Link do catálogo copiado!", description: link });
+            }}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            <Copy className="h-4 w-4" />
+            Copiar Catálogo
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Vaga
+          </button>
+        </div>
       </div>
 
       {/* Create modal */}
