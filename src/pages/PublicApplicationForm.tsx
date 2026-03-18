@@ -53,6 +53,7 @@ export default function PublicApplicationForm() {
   const [discError, setDiscError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [questionFiles, setQuestionFiles] = useState<Record<string, File | null>>({});
   const { toast } = useToast();
 
   useEffect(() => {
