@@ -53,6 +53,7 @@ export default function PublicApplicationForm() {
   const [discError, setDiscError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [questionFiles, setQuestionFiles] = useState<Record<string, File | null>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -220,6 +221,20 @@ export default function PublicApplicationForm() {
         }]);
       if (candidateError) throw candidateError;
 
+      // Upload question files first
+      const uploadedFileUrls: Record<string, string> = {};
+      for (const [qKey, file] of Object.entries(questionFiles)) {
+        if (!file) continue;
+        const qId = qKey.replace("qfile_", "");
+        const sanitizedName = file.name
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]/g, "_");
+        const fileName = `${jobId}/${candidateId}/${Date.now()}-${sanitizedName}`;
+        const { error: uploadError } = await supabase.storage.from("candidate-uploads").upload(fileName, file);
+        if (uploadError) throw new Error("Erro ao enviar arquivo: " + uploadError.message);
+        uploadedFileUrls[qId] = fileName;
+      }
+
       // Save responses
       const responseEntries = Object.entries(formData)
         .filter(([key]) => key.startsWith("q_"))
@@ -227,7 +242,19 @@ export default function PublicApplicationForm() {
           candidate_id: candidateId,
           question_id: key.replace("q_", ""),
           response_value: value,
+          file_url: uploadedFileUrls[key.replace("q_", "")] || null,
         }));
+      // Also add file-only responses (upload fields without text)
+      for (const [qId, fileUrl] of Object.entries(uploadedFileUrls)) {
+        if (!responseEntries.find(r => r.question_id === qId)) {
+          responseEntries.push({
+            candidate_id: candidateId,
+            question_id: qId,
+            response_value: null,
+            file_url: fileUrl,
+          });
+        }
+      }
       if (responseEntries.length > 0) {
         await supabase.from("candidate_responses").insert(responseEntries);
       }
@@ -381,13 +408,21 @@ export default function PublicApplicationForm() {
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
                       {q.question_text}{q.is_required && " *"}
                     </label>
-                    {q.field_type === "textarea" ? (
-                      <textarea
-                        value={formData[`q_${q.id}`] || ""}
-                        onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
-                        className={textareaClass}
-                      />
-                    ) : (
+                  {q.field_type === "textarea" ? (
+                    <textarea
+                      value={formData[`q_${q.id}`] || ""}
+                      onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                      className={textareaClass}
+                    />
+                  ) : q.field_type === "upload" ? (
+                    <FileUpload
+                      accept="*/*"
+                      label="Clique para enviar arquivo"
+                      hint="Arraste ou clique para selecionar"
+                      icon="file"
+                      onChange={(f) => setQuestionFiles(p => ({ ...p, [`qfile_${q.id}`]: f }))}
+                    />
+                  ) : (
                       <input
                         type={q.field_type === "url" ? "url" : "text"}
                         value={formData[`q_${q.id}`] || ""}
@@ -476,6 +511,14 @@ export default function PublicApplicationForm() {
                       value={formData[`q_${q.id}`] || ""}
                       onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
                       className={textareaClass}
+                    />
+                  ) : q.field_type === "upload" ? (
+                    <FileUpload
+                      accept="*/*"
+                      label="Clique para enviar arquivo"
+                      hint="Arraste ou clique para selecionar"
+                      icon="file"
+                      onChange={(f) => setQuestionFiles(p => ({ ...p, [`qfile_${q.id}`]: f }))}
                     />
                   ) : q.field_type === "select" && q.options ? (
                     <select
