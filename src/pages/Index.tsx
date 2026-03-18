@@ -7,7 +7,11 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, LabelList } from "recharts";
+import ScoreDistribution from "@/components/dashboard/ScoreDistribution";
+import CulturalTechnical from "@/components/dashboard/CulturalTechnical";
+import CandidateOrigin from "@/components/dashboard/CandidateOrigin";
+import FunnelVelocity from "@/components/dashboard/FunnelVelocity";
+import FunnelConversion from "@/components/dashboard/FunnelConversion";
 
 export default function Dashboard() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs();
@@ -116,26 +120,11 @@ export default function Dashboard() {
     return { job, total: jobCandidates.length, avgScore: avgJobScore, strong: strongInJob, interview: interviewInJob, daysOpen, health };
   });
 
-  // ── Score Distribution ──
-  const scoreBuckets = [
-    { range: "0–59", min: 0, max: 59, color: "#EF4444" },
-    { range: "60–69", min: 60, max: 69, color: "#F59E0B" },
-    { range: "70–79", min: 70, max: 79, color: "#3B82F6" },
-    { range: "80–89", min: 80, max: 89, color: "#22C55E" },
-    { range: "90–100", min: 90, max: 100, color: "#15803D" },
-  ];
-  const scoreDistribution = scoreBuckets.map((b) => ({
-    ...b,
-    count: scoredCandidates.filter((c) => (c.final_score || 0) >= b.min && (c.final_score || 0) <= b.max).length,
-  }));
-
   // ── Cultural vs Technical per job ──
-  // Map stage_id -> stage_key for evaluations
   const stageKeyMap = new Map(allStages.map((s) => [s.id, s.stage_key]));
   const culturalTechnicalByJob = activeJobs.map((job) => {
     const jobCandidateIds = new Set(candidates.filter((c) => c.job_id === job.id).map((c) => c.id));
     const jobEvals = allEvaluations.filter((e) => jobCandidateIds.has(e.candidate_id));
-
     const culturalScores: number[] = [];
     const technicalScores: number[] = [];
     jobEvals.forEach((e) => {
@@ -144,44 +133,10 @@ export default function Dashboard() {
       if (key === "culture") culturalScores.push(e.score);
       if (key === "technical" || key === "commercial" || key === "application") technicalScores.push(e.score);
     });
-
     const avgCultural = culturalScores.length > 0 ? Math.round(culturalScores.reduce((a, b) => a + b, 0) / culturalScores.length) : null;
     const avgTechnical = technicalScores.length > 0 ? Math.round(technicalScores.reduce((a, b) => a + b, 0) / technicalScores.length) : null;
     return { title: job.title, cultural: avgCultural, technical: avgTechnical };
   });
-
-  // ── Candidate Origin ──
-  const normalizeChannel = (raw: string): string => {
-    const lower = raw.toLowerCase().trim();
-    if (lower.includes("linkedin")) return "LinkedIn";
-    if (lower.includes("instagram")) return "Instagram";
-    if (lower.includes("facebook")) return "Facebook";
-    if (lower.includes("indeed")) return "Indeed";
-    if (lower.includes("indicação") || lower.includes("indicacao")) return "Indicação";
-    if (lower.includes("google")) return "Google";
-    if (lower.includes("site")) return "Site";
-    if (!lower || lower.length < 2) return "Outros";
-    // Capitalize first letter
-    return raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1);
-  };
-
-  const candidateScoreMap = new Map(candidates.map((c) => [c.id, c.final_score]));
-  const channelMap = new Map<string, { count: number; totalScore: number; scoredCount: number }>();
-  allResponses.forEach((r) => {
-    if (!r.response_value) return;
-    const channel = normalizeChannel(r.response_value);
-    const existing = channelMap.get(channel) || { count: 0, totalScore: 0, scoredCount: 0 };
-    existing.count++;
-    const score = candidateScoreMap.get(r.candidate_id);
-    if (score !== null && score !== undefined) {
-      existing.totalScore += score;
-      existing.scoredCount++;
-    }
-    channelMap.set(channel, existing);
-  });
-  const originData = Array.from(channelMap.entries())
-    .map(([channel, d]) => ({ channel, count: d.count, avgScore: d.scoredCount > 0 ? Math.round(d.totalScore / d.scoredCount) : null }))
-    .sort((a, b) => (b.avgScore || 0) - (a.avgScore || 0));
 
   const scoreColor = (score: number | null) => {
     if (score === null) return "text-muted-foreground";
@@ -282,92 +237,20 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── BLOCO 3: Distribuição de Scores ── */}
+      {/* ── BLOCO 3: Distribuição de Scores + Conversão ── */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Score Distribution Chart */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-base font-bold text-foreground">Distribuição de Scores</h2>
-          {scoredCandidates.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Sem candidatos avaliados ainda</p>
-          ) : (
-            <div className="mt-4 h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={scoreDistribution} barCategoryGap="20%">
-                  <XAxis dataKey="range" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis hide allowDecimals={false} />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                    <LabelList dataKey="count" position="top" style={{ fontSize: 12, fontWeight: 600 }} />
-                    {scoreDistribution.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* Cultural vs Technical */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-base font-bold text-foreground">Fit Cultural vs. Técnico</h2>
-          <div className="mt-4 space-y-4">
-            {culturalTechnicalByJob.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhuma vaga ativa</p>
-            )}
-            {culturalTechnicalByJob.map((item) => (
-              <div key={item.title} className="space-y-2">
-                <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                <div className="flex items-center gap-3">
-                  <span className="w-16 text-xs text-muted-foreground">Cultural</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${item.cultural || 0}%` }} />
-                  </div>
-                  <span className="w-8 text-right text-xs font-semibold text-foreground">{item.cultural ?? "—"}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-16 text-xs text-muted-foreground">Técnico</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${item.technical || 0}%` }} />
-                  </div>
-                  <span className="w-8 text-right text-xs font-semibold text-foreground">{item.technical ?? "—"}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ScoreDistribution candidates={candidates} />
+        <FunnelConversion candidates={candidates} />
       </div>
 
-      {/* ── BLOCO 4: Origem dos Candidatos ── */}
-      {originData.length > 0 && (
-        <div className="mt-8">
-          <h2 className="font-display text-lg font-bold text-foreground">Origem dos Candidatos</h2>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">Qual canal traz mais qualidade — não só volume</p>
-          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    {["CANAL", "CANDIDATOS", "SCORE MÉDIO"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {originData.map((row, i) => (
-                    <tr key={row.channel} className={cn("border-b border-border last:border-0", i % 2 === 1 && "bg-muted/20")}>
-                      <td className="px-4 py-3 font-medium text-foreground">{row.channel}</td>
-                      <td className="px-4 py-3 text-foreground">{row.count}</td>
-                      <td className={cn("px-4 py-3 font-semibold", scoreColor(row.avgScore))}>
-                        {row.avgScore !== null ? row.avgScore : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── BLOCO 4: Cultural vs Técnico + Velocidade ── */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <CulturalTechnical data={culturalTechnicalByJob} />
+        <FunnelVelocity candidates={candidates} />
+      </div>
+
+      {/* ── BLOCO 5: Origem dos Candidatos ── */}
+      <CandidateOrigin responses={allResponses} candidates={candidates} />
     </AppLayout>
   );
 }
