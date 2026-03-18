@@ -54,6 +54,8 @@ export default function PublicApplicationForm() {
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [questionFiles, setQuestionFiles] = useState<Record<string, File | null>>({});
+  const [lgpdConsent, setLgpdConsent] = useState(false);
+  const [lgpdError, setLgpdError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
