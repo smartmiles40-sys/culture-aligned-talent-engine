@@ -29,6 +29,8 @@ export default function CandidateDetail() {
   const [cvActionLoading, setCvActionLoading] = useState(false);
   const [analyzingDisc, setAnalyzingDisc] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [pendingStage, setPendingStage] = useState<PipelineStage | null>(null);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
