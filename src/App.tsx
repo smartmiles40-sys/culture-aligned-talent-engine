@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Approved from "./pages/Approved";
 import Rejected from "./pages/Rejected";
 import PublicJobs from "./pages/PublicJobs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/vagas-abertas" element={<PublicJobs />} />
             <Route path="/aplicar/:jobId" element={<PublicApplicationForm />} />
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/vagas" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
             <Route path="/candidatos" element={<ProtectedRoute><Candidates /></ProtectedRoute>} />

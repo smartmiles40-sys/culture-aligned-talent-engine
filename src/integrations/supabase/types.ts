@@ -255,6 +255,8 @@ export type Database = {
           final_score: number | null
           id: string
           job_id: string
+          lgpd_consent: boolean | null
+          lgpd_consent_date: string | null
           name: string
           phone: string | null
           status: string | null
@@ -271,6 +273,8 @@ export type Database = {
           final_score?: number | null
           id?: string
           job_id: string
+          lgpd_consent?: boolean | null
+          lgpd_consent_date?: string | null
           name: string
           phone?: string | null
           status?: string | null
@@ -287,6 +291,8 @@ export type Database = {
           final_score?: number | null
           id?: string
           job_id?: string
+          lgpd_consent?: boolean | null
+          lgpd_consent_date?: string | null
           name?: string
           phone?: string | null
           status?: string | null

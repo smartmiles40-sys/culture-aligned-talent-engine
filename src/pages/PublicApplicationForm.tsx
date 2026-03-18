@@ -54,6 +54,8 @@ export default function PublicApplicationForm() {
   const [analyzing, setAnalyzing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [questionFiles, setQuestionFiles] = useState<Record<string, File | null>>({});
+  const [lgpdConsent, setLgpdConsent] = useState(false);
+  const [lgpdError, setLgpdError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -218,7 +220,9 @@ export default function PublicApplicationForm() {
           phone: formData.phone || null,
           cv_url: formData.__cv_url || null,
           status: "in_progress",
-        }]);
+          lgpd_consent: true,
+          lgpd_consent_date: new Date().toISOString(),
+        } as any]);
       if (candidateError) throw candidateError;
 
       // Upload question files first
@@ -551,6 +555,40 @@ export default function PublicApplicationForm() {
           </div>
         )}
 
+        {/* LGPD Consent - shown on last step */}
+        {step === totalSteps - 1 && (
+          <div className="mt-6 space-y-2">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="lgpd-consent"
+                checked={lgpdConsent}
+                onChange={(e) => {
+                  setLgpdConsent(e.target.checked);
+                  if (e.target.checked) setLgpdError(false);
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-primary accent-primary cursor-pointer"
+              />
+              <label htmlFor="lgpd-consent" className="text-[13px] leading-relaxed text-muted-foreground cursor-pointer" style={{ fontFamily: 'Inter, sans-serif' }}>
+                Li e concordo com a{" "}
+                <a
+                  href="/privacidade"
+                  target="_blank"
+                  className="text-primary underline hover:opacity-80"
+                >
+                  Política de Privacidade
+                </a>{" "}
+                da Se Tu For, Eu Vou e autorizo o uso dos meus dados pessoais para fins de recrutamento e seleção pelo período de 12 meses.
+              </label>
+            </div>
+            {lgpdError && (
+              <p className="text-sm text-destructive ml-7">
+                Você precisa aceitar a Política de Privacidade para continuar.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
           <button
             onClick={() => setStep(Math.max(0, step - 1))}
@@ -570,9 +608,19 @@ export default function PublicApplicationForm() {
             </button>
           ) : (
             <button
-              onClick={handleSubmit}
+              onClick={() => {
+                if (!lgpdConsent) {
+                  setLgpdError(true);
+                  return;
+                }
+                handleSubmit();
+              }}
               disabled={submitting || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
-              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all duration-200 hover:opacity-90 disabled:opacity-50"
+              style={{
+                opacity: lgpdConsent ? undefined : 0.4,
+                pointerEvents: lgpdConsent ? undefined : 'none',
+              }}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {submitting ? "Enviando..." : "Enviar Candidatura"}
