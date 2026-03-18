@@ -15,6 +15,7 @@ import JobConfig from "./pages/JobConfig";
 import Settings from "./pages/Settings";
 import Approved from "./pages/Approved";
 import Rejected from "./pages/Rejected";
+import PublicJobs from "./pages/PublicJobs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/vagas-abertas" element={<PublicJobs />} />
             <Route path="/aplicar/:jobId" element={<PublicApplicationForm />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/vagas" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
