@@ -357,6 +357,18 @@ export default function CandidateDetail() {
                 {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">Consentimento LGPD</span>
+              {(candidate as any).lgpd_consent ? (
+                <p className="text-sm text-success font-medium">
+                  ✓ Concedido em {new Date((candidate as any).lgpd_consent_date).toLocaleDateString("pt-BR")} às {new Date((candidate as any).lgpd_consent_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Candidatura anterior à política de privacidade
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
