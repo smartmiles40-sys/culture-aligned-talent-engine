@@ -512,6 +512,14 @@ export default function PublicApplicationForm() {
                       onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
                       className={textareaClass}
                     />
+                  ) : q.field_type === "upload" ? (
+                    <FileUpload
+                      accept="*/*"
+                      label="Clique para enviar arquivo"
+                      hint="Arraste ou clique para selecionar"
+                      icon="file"
+                      onChange={(f) => setQuestionFiles(p => ({ ...p, [`qfile_${q.id}`]: f }))}
+                    />
                   ) : q.field_type === "select" && q.options ? (
                     <select
                       value={formData[`q_${q.id}`] || ""}
