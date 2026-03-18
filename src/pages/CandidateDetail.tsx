@@ -190,6 +190,80 @@ export default function CandidateDetail() {
     }
   };
 
+  const handleGenerateResponsesPdf = () => {
+    const grouped = candidateResponses.reduce((acc, r) => {
+      if (!acc[r.stage_label]) acc[r.stage_label] = [];
+      acc[r.stage_label].push(r);
+      return acc;
+    }, {} as Record<string, typeof candidateResponses>);
+
+    const discSection = disc ? `
+      <div style="margin-bottom:20px;">
+        <h2 style="font-size:14px;color:#333;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:10px;">DISC / Temperamento</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
+          <tr>
+            ${(["D","I","S","C"] as const).map((k) => {
+              const key = `${k.toLowerCase()}_score` as "d_score"|"i_score"|"s_score"|"c_score";
+              return `<td style="text-align:center;padding:8px;border:1px solid #eee;"><strong style="font-size:18px;">${disc[key] ?? "—"}</strong><br/><span style="font-size:11px;color:#888;">${k}</span></td>`;
+            }).join("")}
+          </tr>
+        </table>
+        ${disc.summary ? `<p style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:4px;">${disc.summary}</p>` : ""}
+      </div>
+    ` : "";
+
+    const cvSection = candidate.cv_analysis && typeof candidate.cv_analysis === "object" ? `
+      <div style="margin-bottom:20px;">
+        <h2 style="font-size:14px;color:#333;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:10px;">Análise de CV (IA)</h2>
+        <p style="font-size:12px;color:#555;"><strong>Score:</strong> ${(candidate.cv_analysis as any).score ?? "—"} | <strong>Recomendação:</strong> ${(candidate.cv_analysis as any).recommendation ?? "—"}</p>
+        ${(candidate.cv_analysis as any).summary ? `<p style="font-size:12px;color:#555;margin-top:4px;">${(candidate.cv_analysis as any).summary}</p>` : ""}
+      </div>
+    ` : "";
+
+    const responsesHtml = Object.entries(grouped).map(([stageLabel, responses]) => `
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:14px;color:#333;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:8px;">${stageLabel}</h2>
+        ${responses.map(r => `
+          <div style="margin-bottom:10px;padding:8px;border:1px solid #eee;border-radius:4px;">
+            <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:4px;">${r.question_text}</div>
+            <div style="font-size:12px;color:#555;white-space:pre-wrap;">${r.response_value || '<em>Sem resposta</em>'}</div>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+
+    const scoreHtml = finalScore !== null ? `
+      <div style="margin-bottom:20px;padding:12px;background:#f5f5f5;border-radius:6px;text-align:center;">
+        <div style="font-size:28px;font-weight:bold;">${Math.round(finalScore)}</div>
+        <div style="font-size:12px;color:#888;">Score Final — ${classification || "Pendente"}</div>
+      </div>
+    ` : "";
+
+    const html = `
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><title>Relatório - ${candidate.name}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;padding:30px;color:#333;max-width:800px;margin:0 auto;}@media print{body{padding:15px;}}</style>
+      </head><body>
+        <h1 style="font-size:20px;margin-bottom:4px;">${candidate.name}</h1>
+        <p style="font-size:12px;color:#888;margin-bottom:4px;">${candidate.email}${candidate.phone ? ` • ${candidate.phone}` : ""}</p>
+        <p style="font-size:12px;color:#888;margin-bottom:20px;">Vaga: ${job?.title || "—"} (${job?.area || "—"}) • Candidatou-se em ${new Date(candidate.applied_at).toLocaleDateString("pt-BR")}</p>
+        ${scoreHtml}
+        ${cvSection}
+        ${discSection}
+        <h2 style="font-size:16px;color:#333;margin-bottom:12px;">Respostas do Formulário</h2>
+        ${responsesHtml}
+        <p style="font-size:10px;color:#aaa;margin-top:30px;text-align:center;">Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+      </body></html>
+    `;
+
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 500);
+    }
+  };
+
   const inputClass = "h-9 w-20 rounded-lg border border-input bg-background px-2 text-center text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
   return (
