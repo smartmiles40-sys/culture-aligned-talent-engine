@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Briefcase, MapPin, ChevronRight, Search, Loader2 } from "lucide-react";
+import logo from "@/assets/logo-vertical-off-white.jpg";
 
 interface PublicJob {
   id: string;
