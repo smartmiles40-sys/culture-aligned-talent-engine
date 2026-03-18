@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { useCandidate, useUpdateCandidate, useDeleteCandidate } from "@/hooks/useCandidates";
+import { useCandidate, useUpdateCandidate, useDeleteCandidate, PIPELINE_STAGES, PipelineStage } from "@/hooks/useCandidates";
 import { useJob } from "@/hooks/useJobs";
 import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
