@@ -778,6 +778,30 @@ export default function CandidateDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={showRejectConfirm} onOpenChange={setShowRejectConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mover para Reprovado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja mover {candidate.name} para Reprovado? Essa ação pode ser revertida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingStage(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingStage) updateCandidate.mutate({ id: candidate.id, pipeline_stage: pendingStage } as any);
+                setShowRejectConfirm(false);
+                setPendingStage(null);
+              }}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

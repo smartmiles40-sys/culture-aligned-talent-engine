@@ -222,7 +222,10 @@ export default function Dashboard() {
           change="sem ação há +48h"
           variant={awaitingReview > 0 ? "danger" : "success"}
         />
-        <StatCard icon={Users} label="Em Entrevista" value={isLoading ? "..." : inInterview} change="etapa atual no pipeline" />
+        <StatCard icon={Users} label="Em Andamento" value={isLoading ? "..." : candidates.filter(c => {
+          const stage = (c as any).pipeline_stage || "nova_candidatura";
+          return stage !== "nova_candidatura" && stage !== "reprovado" && stage !== "contratado";
+        }).length} change="em etapas ativas do pipeline" />
         <Link to="/candidatos?classification=Forte">
           <StatCard icon={Star} label="Taxa de Candidatos Fortes" value={isLoading ? "..." : `${strongPct}%`} change="score ≥ 80 sobre o total" variant="success" />
         </Link>
