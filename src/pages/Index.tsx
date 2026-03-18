@@ -7,7 +7,11 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, LabelList } from "recharts";
+import ScoreDistribution from "@/components/dashboard/ScoreDistribution";
+import CulturalTechnical from "@/components/dashboard/CulturalTechnical";
+import CandidateOrigin from "@/components/dashboard/CandidateOrigin";
+import FunnelVelocity from "@/components/dashboard/FunnelVelocity";
+import FunnelConversion from "@/components/dashboard/FunnelConversion";
 
 export default function Dashboard() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs();
