@@ -87,11 +87,9 @@ export default function PublicJobs() {
               color: "rgba(255,255,255,0.45)",
             }}
           >
-            <span>Agência boutique de viagens</span>
-            <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
-            <span>Processo seletivo por IA</span>
-            <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
-            <span>Posicionamento exclusivo</span>
+             <span>Agência boutique de viagens</span>
+             <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+             <span>Posicionamento exclusivo</span>
           </div>
 
           {/* Separator */}
