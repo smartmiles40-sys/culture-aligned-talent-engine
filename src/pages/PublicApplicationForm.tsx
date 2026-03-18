@@ -221,6 +221,20 @@ export default function PublicApplicationForm() {
         }]);
       if (candidateError) throw candidateError;
 
+      // Upload question files first
+      const uploadedFileUrls: Record<string, string> = {};
+      for (const [qKey, file] of Object.entries(questionFiles)) {
+        if (!file) continue;
+        const qId = qKey.replace("qfile_", "");
+        const sanitizedName = file.name
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]/g, "_");
+        const fileName = `${jobId}/${candidateId}/${Date.now()}-${sanitizedName}`;
+        const { error: uploadError } = await supabase.storage.from("candidate-uploads").upload(fileName, file);
+        if (uploadError) throw new Error("Erro ao enviar arquivo: " + uploadError.message);
+        uploadedFileUrls[qId] = fileName;
+      }
+
       // Save responses
       const responseEntries = Object.entries(formData)
         .filter(([key]) => key.startsWith("q_"))
@@ -228,7 +242,19 @@ export default function PublicApplicationForm() {
           candidate_id: candidateId,
           question_id: key.replace("q_", ""),
           response_value: value,
+          file_url: uploadedFileUrls[key.replace("q_", "")] || null,
         }));
+      // Also add file-only responses (upload fields without text)
+      for (const [qId, fileUrl] of Object.entries(uploadedFileUrls)) {
+        if (!responseEntries.find(r => r.question_id === qId)) {
+          responseEntries.push({
+            candidate_id: candidateId,
+            question_id: qId,
+            response_value: null,
+            file_url: fileUrl,
+          });
+        }
+      }
       if (responseEntries.length > 0) {
         await supabase.from("candidate_responses").insert(responseEntries);
       }
