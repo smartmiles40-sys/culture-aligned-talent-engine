@@ -1,6 +1,6 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { useJobs, useCreateJob, useDeleteJob, useUpdateJob, useDuplicateJob } from "@/hooks/useJobs";
-import { Plus, Copy, Settings, ChevronRight, Users, Calendar, Trash2, Archive, MoreVertical, CopyPlus } from "lucide-react";
+import { Plus, Copy, Settings, ChevronRight, Users, Calendar, Trash2, Archive, MoreVertical, CopyPlus, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -76,6 +76,15 @@ export default function Jobs() {
           <p className="mt-1 text-sm text-muted-foreground">Gerencie as vagas e configure o processo seletivo</p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/vagas-abertas"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Ver Página Pública
+          </a>
           <button
             onClick={() => {
               const link = `${window.location.origin}/vagas-abertas`;
