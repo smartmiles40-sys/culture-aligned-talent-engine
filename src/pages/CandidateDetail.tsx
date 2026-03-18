@@ -291,6 +291,26 @@ export default function CandidateDetail() {
                   <Calendar className="h-3 w-3" />
                   Candidatou-se em {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </p>
+                <div className="mt-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Etapa do processo</span>
+                  <select
+                    value={(candidate as any).pipeline_stage || "nova_candidatura"}
+                    onChange={(e) => {
+                      const val = e.target.value as PipelineStage;
+                      if (val === "reprovado") {
+                        setPendingStage(val);
+                        setShowRejectConfirm(true);
+                      } else {
+                        updateCandidate.mutate({ id: candidate.id, pipeline_stage: val } as any);
+                      }
+                    }}
+                    className="mt-1 block h-8 rounded-lg border border-input bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {PIPELINE_STAGES.map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
               </>
             )}
           </div>
