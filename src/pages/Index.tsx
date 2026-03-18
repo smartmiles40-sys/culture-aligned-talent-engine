@@ -219,92 +219,20 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── BLOCO 3: Distribuição de Scores ── */}
+      {/* ── BLOCO 3: Distribuição de Scores + Conversão ── */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Score Distribution Chart */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-base font-bold text-foreground">Distribuição de Scores</h2>
-          {scoredCandidates.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Sem candidatos avaliados ainda</p>
-          ) : (
-            <div className="mt-4 h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={scoreDistribution} barCategoryGap="20%">
-                  <XAxis dataKey="range" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis hide allowDecimals={false} />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                    <LabelList dataKey="count" position="top" style={{ fontSize: 12, fontWeight: 600 }} />
-                    {scoreDistribution.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* Cultural vs Technical */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-base font-bold text-foreground">Fit Cultural vs. Técnico</h2>
-          <div className="mt-4 space-y-4">
-            {culturalTechnicalByJob.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhuma vaga ativa</p>
-            )}
-            {culturalTechnicalByJob.map((item) => (
-              <div key={item.title} className="space-y-2">
-                <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                <div className="flex items-center gap-3">
-                  <span className="w-16 text-xs text-muted-foreground">Cultural</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${item.cultural || 0}%` }} />
-                  </div>
-                  <span className="w-8 text-right text-xs font-semibold text-foreground">{item.cultural ?? "—"}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-16 text-xs text-muted-foreground">Técnico</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${item.technical || 0}%` }} />
-                  </div>
-                  <span className="w-8 text-right text-xs font-semibold text-foreground">{item.technical ?? "—"}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ScoreDistribution candidates={candidates} />
+        <FunnelConversion candidates={candidates} />
       </div>
 
-      {/* ── BLOCO 4: Origem dos Candidatos ── */}
-      {originData.length > 0 && (
-        <div className="mt-8">
-          <h2 className="font-display text-lg font-bold text-foreground">Origem dos Candidatos</h2>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">Qual canal traz mais qualidade — não só volume</p>
-          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    {["CANAL", "CANDIDATOS", "SCORE MÉDIO"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {originData.map((row, i) => (
-                    <tr key={row.channel} className={cn("border-b border-border last:border-0", i % 2 === 1 && "bg-muted/20")}>
-                      <td className="px-4 py-3 font-medium text-foreground">{row.channel}</td>
-                      <td className="px-4 py-3 text-foreground">{row.count}</td>
-                      <td className={cn("px-4 py-3 font-semibold", scoreColor(row.avgScore))}>
-                        {row.avgScore !== null ? row.avgScore : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── BLOCO 4: Cultural vs Técnico + Velocidade ── */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <CulturalTechnical data={culturalTechnicalByJob} />
+        <FunnelVelocity candidates={candidates} />
+      </div>
+
+      {/* ── BLOCO 5: Origem dos Candidatos ── */}
+      <CandidateOrigin responses={allResponses} candidates={candidates} />
     </AppLayout>
   );
 }
