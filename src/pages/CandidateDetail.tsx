@@ -631,6 +631,7 @@ export default function CandidateDetail() {
         )}
 
         {/* Respostas do Candidato */}
+        {candidateResponses.length > 0 && (
           <div className="mt-6 rounded-xl border border-border bg-card shadow-card">
            <div className="flex items-center gap-2 p-5">
              <button
