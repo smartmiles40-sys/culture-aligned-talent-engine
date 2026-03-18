@@ -408,13 +408,21 @@ export default function PublicApplicationForm() {
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
                       {q.question_text}{q.is_required && " *"}
                     </label>
-                    {q.field_type === "textarea" ? (
-                      <textarea
-                        value={formData[`q_${q.id}`] || ""}
-                        onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
-                        className={textareaClass}
-                      />
-                    ) : (
+                  {q.field_type === "textarea" ? (
+                    <textarea
+                      value={formData[`q_${q.id}`] || ""}
+                      onChange={(e) => setFormData(p => ({ ...p, [`q_${q.id}`]: e.target.value }))}
+                      className={textareaClass}
+                    />
+                  ) : q.field_type === "upload" ? (
+                    <FileUpload
+                      accept="*/*"
+                      label="Clique para enviar arquivo"
+                      hint="Arraste ou clique para selecionar"
+                      icon="file"
+                      onChange={(f) => setQuestionFiles(p => ({ ...p, [`qfile_${q.id}`]: f }))}
+                    />
+                  ) : (
                       <input
                         type={q.field_type === "url" ? "url" : "text"}
                         value={formData[`q_${q.id}`] || ""}
