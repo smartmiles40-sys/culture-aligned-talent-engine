@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Approved from "./pages/Approved";
 import Rejected from "./pages/Rejected";
 import PublicJobs from "./pages/PublicJobs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
