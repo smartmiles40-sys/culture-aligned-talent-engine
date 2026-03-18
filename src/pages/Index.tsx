@@ -120,6 +120,24 @@ export default function Dashboard() {
     return { job, total: jobCandidates.length, avgScore: avgJobScore, strong: strongInJob, interview: interviewInJob, daysOpen, health };
   });
 
+  // ── Cultural vs Technical per job ──
+  const stageKeyMap = new Map(allStages.map((s) => [s.id, s.stage_key]));
+  const culturalTechnicalByJob = activeJobs.map((job) => {
+    const jobCandidateIds = new Set(candidates.filter((c) => c.job_id === job.id).map((c) => c.id));
+    const jobEvals = allEvaluations.filter((e) => jobCandidateIds.has(e.candidate_id));
+    const culturalScores: number[] = [];
+    const technicalScores: number[] = [];
+    jobEvals.forEach((e) => {
+      if (e.score === null) return;
+      const key = stageKeyMap.get(e.stage_id);
+      if (key === "culture") culturalScores.push(e.score);
+      if (key === "technical" || key === "commercial" || key === "application") technicalScores.push(e.score);
+    });
+    const avgCultural = culturalScores.length > 0 ? Math.round(culturalScores.reduce((a, b) => a + b, 0) / culturalScores.length) : null;
+    const avgTechnical = technicalScores.length > 0 ? Math.round(technicalScores.reduce((a, b) => a + b, 0) / technicalScores.length) : null;
+    return { title: job.title, cultural: avgCultural, technical: avgTechnical };
+  });
+
   const scoreColor = (score: number | null) => {
     if (score === null) return "text-muted-foreground";
     if (score >= 70) return "text-success";
