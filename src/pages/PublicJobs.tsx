@@ -45,12 +45,13 @@ export default function PublicJobs() {
         <div className="absolute inset-0 gradient-premium opacity-90" />
         <div className="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent font-display text-sm font-bold text-accent-foreground shadow-elevated">
-              RH
+            <img src={logo} alt="Se Tu For, Eu Vou!" className="h-12 w-12 rounded-xl object-cover shadow-elevated" />
+            <div className="flex flex-col">
+              <span className="font-display text-base font-bold text-primary-foreground/90 tracking-tight">
+                Se Tu For, Eu Vou!
+              </span>
+              <span className="text-xs text-primary-foreground/50">Viagens • Recrutamento</span>
             </div>
-            <span className="font-display text-base font-bold text-primary-foreground/90 tracking-tight">
-              Recrutamento
-            </span>
           </div>
           <h1 className="font-display text-4xl sm:text-5xl font-bold text-primary-foreground leading-tight tracking-tight">
             Vagas Abertas
