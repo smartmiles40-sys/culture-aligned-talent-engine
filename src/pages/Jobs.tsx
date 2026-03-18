@@ -1,6 +1,6 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { useJobs, useCreateJob, useDeleteJob, useUpdateJob, useDuplicateJob } from "@/hooks/useJobs";
-import { Plus, Copy, Settings, ChevronRight, Users, Calendar, Trash2, Archive, MoreVertical, CopyPlus } from "lucide-react";
+import { Plus, Copy, Settings, ChevronRight, Users, Calendar, Trash2, Archive, MoreVertical, CopyPlus, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
