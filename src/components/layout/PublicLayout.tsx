@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo-vertical-off-white.jpg";
+import logo from "@/assets/logo-horizontal-dark-teal.png";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
