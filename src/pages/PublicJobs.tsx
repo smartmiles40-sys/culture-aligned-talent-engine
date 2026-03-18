@@ -261,14 +261,6 @@ export default function PublicJobs() {
                           <MapPin style={{ width: 13, height: 13 }} />
                           {job.area}
                         </span>
-                        <span style={{ color: "#D1D5DB" }}>·</span>
-                        <span>
-                          {new Date(job.created_at).toLocaleDateString("pt-BR", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
                       </div>
 
                       {/* Skills */}
