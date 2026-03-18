@@ -1,9 +1,9 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { useCandidates, useDeleteCandidate, useUpdateCandidate } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Search, Users, Mail, Trash2, Archive, MoreVertical } from "lucide-react";
+import { Search, Users, Mail, Trash2, Archive, MoreVertical, LayoutList, Columns3 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -12,8 +12,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const AREAS = ["Comercial", "Operações", "Marketing", "Financeiro", "Relacionamento"];
+import KanbanBoard from "@/components/candidates/KanbanBoard";
 
 export default function Candidates() {
   const [searchParams] = useSearchParams();
@@ -23,6 +22,13 @@ export default function Candidates() {
   const [classFilter, setClassFilter] = useState(initialClass);
   const [jobFilter, setJobFilter] = useState("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "kanban">(() => {
+    return (localStorage.getItem("candidates-view") as "list" | "kanban") || "kanban";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("candidates-view", viewMode);
+  }, [viewMode]);
 
   const { data: candidates = [], isLoading } = useCandidates();
   const { data: jobs = [] } = useJobs();
@@ -81,6 +87,23 @@ export default function Candidates() {
             </button>
           ))}
         </div>
+
+        <div className="ml-auto flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
+          <button
+            onClick={() => setViewMode("list")}
+            className={cn("rounded-md p-1.5 transition-colors", viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+            title="Visão lista"
+          >
+            <LayoutList className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("kanban")}
+            className={cn("rounded-md p-1.5 transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+            title="Visão kanban"
+          >
+            <Columns3 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -91,6 +114,8 @@ export default function Candidates() {
           <p className="mt-3 text-sm font-medium text-muted-foreground">Nenhum candidato encontrado</p>
           <p className="mt-1 text-xs text-muted-foreground">Divulgue o link da vaga para receber candidaturas</p>
         </div>
+      ) : viewMode === "kanban" ? (
+        <KanbanBoard candidates={filtered} jobs={jobs} />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((c) => {

@@ -259,6 +259,7 @@ export type Database = {
           lgpd_consent_date: string | null
           name: string
           phone: string | null
+          pipeline_stage: string
           status: string | null
           updated_at: string
         }
@@ -277,6 +278,7 @@ export type Database = {
           lgpd_consent_date?: string | null
           name: string
           phone?: string | null
+          pipeline_stage?: string
           status?: string | null
           updated_at?: string
         }
@@ -295,6 +297,7 @@ export type Database = {
           lgpd_consent_date?: string | null
           name?: string
           phone?: string | null
+          pipeline_stage?: string
           status?: string | null
           updated_at?: string
         }

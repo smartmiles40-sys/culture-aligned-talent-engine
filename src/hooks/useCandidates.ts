@@ -2,6 +2,27 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export type PipelineStage =
+  | "nova_candidatura"
+  | "em_analise"
+  | "aprovado_entrevista"
+  | "entrevista_agendada"
+  | "entrevista_realizada"
+  | "proposta_enviada"
+  | "contratado"
+  | "reprovado";
+
+export const PIPELINE_STAGES: { key: PipelineStage; label: string; color: string }[] = [
+  { key: "nova_candidatura", label: "Nova Candidatura", color: "#6B7280" },
+  { key: "em_analise", label: "Em Análise", color: "#3B82F6" },
+  { key: "aprovado_entrevista", label: "Aprovado p/ Entrevista", color: "#22C55E" },
+  { key: "entrevista_agendada", label: "Entrevista Agendada", color: "#F59E0B" },
+  { key: "entrevista_realizada", label: "Entrevista Realizada", color: "#F97316" },
+  { key: "proposta_enviada", label: "Proposta Enviada", color: "#8B5CF6" },
+  { key: "contratado", label: "Contratado", color: "#CBEF6E" },
+  { key: "reprovado", label: "Reprovado", color: "#EF4444" },
+];
+
 export interface DbCandidate {
   id: string;
   job_id: string;
@@ -17,6 +38,7 @@ export interface DbCandidate {
   alerts: string[];
   applied_at: string;
   updated_at: string;
+  pipeline_stage: PipelineStage;
 }
 
 export function useCandidates(filters?: { jobId?: string; classification?: string; status?: string; search?: string }) {

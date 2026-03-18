@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { useCandidate, useUpdateCandidate, useDeleteCandidate } from "@/hooks/useCandidates";
+import { useCandidate, useUpdateCandidate, useDeleteCandidate, PIPELINE_STAGES, PipelineStage } from "@/hooks/useCandidates";
 import { useJob } from "@/hooks/useJobs";
 import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
@@ -29,6 +29,8 @@ export default function CandidateDetail() {
   const [cvActionLoading, setCvActionLoading] = useState(false);
   const [analyzingDisc, setAnalyzingDisc] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [pendingStage, setPendingStage] = useState<PipelineStage | null>(null);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
@@ -289,6 +291,26 @@ export default function CandidateDetail() {
                   <Calendar className="h-3 w-3" />
                   Candidatou-se em {new Date(candidate.applied_at).toLocaleDateString("pt-BR")} às {new Date(candidate.applied_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </p>
+                <div className="mt-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Etapa do processo</span>
+                  <select
+                    value={(candidate as any).pipeline_stage || "nova_candidatura"}
+                    onChange={(e) => {
+                      const val = e.target.value as PipelineStage;
+                      if (val === "reprovado") {
+                        setPendingStage(val);
+                        setShowRejectConfirm(true);
+                      } else {
+                        updateCandidate.mutate({ id: candidate.id, pipeline_stage: val } as any);
+                      }
+                    }}
+                    className="mt-1 block h-8 rounded-lg border border-input bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {PIPELINE_STAGES.map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
               </>
             )}
           </div>
@@ -752,6 +774,30 @@ export default function CandidateDetail() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showRejectConfirm} onOpenChange={setShowRejectConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mover para Reprovado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja mover {candidate.name} para Reprovado? Essa ação pode ser revertida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingStage(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingStage) updateCandidate.mutate({ id: candidate.id, pipeline_stage: pendingStage } as any);
+                setShowRejectConfirm(false);
+                setPendingStage(null);
+              }}
+            >
+              Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
