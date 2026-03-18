@@ -220,7 +220,9 @@ export default function PublicApplicationForm() {
           phone: formData.phone || null,
           cv_url: formData.__cv_url || null,
           status: "in_progress",
-        }]);
+          lgpd_consent: true,
+          lgpd_consent_date: new Date().toISOString(),
+        } as any]);
       if (candidateError) throw candidateError;
 
       // Upload question files first
