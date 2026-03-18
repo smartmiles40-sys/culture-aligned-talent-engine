@@ -6,7 +6,7 @@ interface StatCardProps {
   value: string | number;
   change?: string;
   icon: LucideIcon;
-  variant?: "default" | "accent" | "success" | "warning";
+  variant?: "default" | "accent" | "success" | "warning" | "danger";
 }
 
 const variantStyles = {
@@ -14,6 +14,7 @@ const variantStyles = {
   accent: "bg-primary text-primary-foreground border border-primary",
   success: "bg-card border border-border shadow-card border-l-4 border-l-success",
   warning: "bg-card border border-border shadow-card border-l-4 border-l-warning",
+  danger: "bg-card border border-destructive shadow-card border-l-4 border-l-destructive",
 };
 
 const iconVariantStyles = {
@@ -21,6 +22,7 @@ const iconVariantStyles = {
   accent: "bg-primary-foreground/10 text-primary-foreground",
   success: "bg-success/10 text-success",
   warning: "bg-warning/10 text-warning",
+  danger: "bg-destructive/10 text-destructive",
 };
 
 export default function StatCard({ label, value, change, icon: Icon, variant = "default" }: StatCardProps) {
