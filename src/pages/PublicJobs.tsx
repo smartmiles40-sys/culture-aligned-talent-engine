@@ -176,10 +176,8 @@ export default function PublicJobs() {
       <footer className="border-t border-sidebar-border py-8">
         <div className="mx-auto max-w-5xl px-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/20 font-display text-[9px] font-bold text-accent">
-              RH
-            </div>
-            <span className="text-xs text-primary-foreground/25">Plataforma de Recrutamento</span>
+            <img src={logo} alt="Se Tu For, Eu Vou!" className="h-6 w-6 rounded-md object-cover" />
+            <span className="text-xs text-primary-foreground/25">Se Tu For, Eu Vou! Viagens</span>
           </div>
           <span className="text-[10px] text-primary-foreground/15">
             © {new Date().getFullYear()}

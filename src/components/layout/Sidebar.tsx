@@ -23,9 +23,7 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex h-16 items-center gap-3 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-accent-foreground">
-          SV
-        </div>
+        <img src={logo} alt="Se Tu For, Eu Vou!" className="h-9 w-9 rounded-lg object-cover" />
         <div className="flex flex-col">
           <span className="font-display text-sm font-bold text-sidebar-foreground">Se Tu For</span>
           <span className="text-[11px] text-sidebar-foreground/60">Eu Vou • Recrutamento</span>
