@@ -610,22 +610,49 @@ export default function PublicApplicationForm() {
             </button>
           ) : (
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!lgpdConsent) {
                   setLgpdError(true);
                   return;
                 }
-                handleSubmit();
+                // If last step is DISC, upload DISC file first then submit
+                if (currentStep?.type === "disc") {
+                  if (!discFile) {
+                    setDiscError("Por favor, envie o PDF com o resultado do DISC.");
+                    return;
+                  }
+                  setSubmitting(true);
+                  setAnalyzing(true);
+                  setDiscError(null);
+                  try {
+                    const sanitizedName = discFile.name
+                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                      .replace(/[^a-zA-Z0-9._-]/g, "_");
+                    const fileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
+                    const { error: uploadError } = await supabase.storage.from("disc-files").upload(fileName, discFile);
+                    if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
+                    const candidateId = crypto.randomUUID();
+                    await submitCandidate(candidateId, fileName);
+                  } catch (e: any) {
+                    setDiscError(e.message);
+                    toast({ title: "Erro", description: e.message, variant: "destructive" });
+                  } finally {
+                    setAnalyzing(false);
+                    setSubmitting(false);
+                  }
+                } else {
+                  handleSubmit();
+                }
               }}
-              disabled={submitting || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={submitting || analyzing || (currentStep?.type === "disc" && !discFile) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
               className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all duration-200 hover:opacity-90 disabled:opacity-50"
               style={{
                 opacity: lgpdConsent ? undefined : 0.4,
                 pointerEvents: lgpdConsent ? undefined : 'none',
               }}
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {submitting ? "Enviando..." : "Enviar Candidatura"}
+              {(submitting || analyzing) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {(submitting || analyzing) ? "Enviando..." : currentStep?.type === "disc" ? "Enviar DISC e Candidatura" : "Enviar Candidatura"}
             </button>
           )}
         </div>
