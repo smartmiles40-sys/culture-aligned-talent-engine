@@ -204,100 +204,102 @@ export default function PublicApplicationForm() {
     }
   };
 
+  const submitCandidate = async (candidateId: string, discFileUrlOverride?: string) => {
+    const discUrl = discFileUrlOverride || formData.__disc_file_url;
+    // Create candidate
+    const { error: candidateError } = await supabase
+      .from("candidates")
+      .insert([{
+        id: candidateId,
+        job_id: jobId,
+        name: formData.name || "Sem nome",
+        email: formData.email || "sem@email.com",
+        phone: formData.phone || null,
+        cv_url: formData.__cv_url || null,
+        status: "in_progress",
+        lgpd_consent: true,
+        lgpd_consent_date: new Date().toISOString(),
+      } as any]);
+    if (candidateError) throw candidateError;
+
+    // Upload question files first
+    const uploadedFileUrls: Record<string, string> = {};
+    for (const [qKey, file] of Object.entries(questionFiles)) {
+      if (!file) continue;
+      const qId = qKey.replace("qfile_", "");
+      const sanitizedName = file.name
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const fileName = `${jobId}/${candidateId}/${Date.now()}-${sanitizedName}`;
+      const { error: uploadError } = await supabase.storage.from("candidate-uploads").upload(fileName, file);
+      if (uploadError) throw new Error("Erro ao enviar arquivo: " + uploadError.message);
+      uploadedFileUrls[qId] = fileName;
+    }
+
+    // Save responses
+    const responseEntries = Object.entries(formData)
+      .filter(([key]) => key.startsWith("q_"))
+      .map(([key, value]) => ({
+        candidate_id: candidateId,
+        question_id: key.replace("q_", ""),
+        response_value: value,
+        file_url: uploadedFileUrls[key.replace("q_", "")] || null,
+      }));
+    for (const [qId, fileUrl] of Object.entries(uploadedFileUrls)) {
+      if (!responseEntries.find(r => r.question_id === qId)) {
+        responseEntries.push({
+          candidate_id: candidateId,
+          question_id: qId,
+          response_value: null,
+          file_url: fileUrl,
+        });
+      }
+    }
+    if (responseEntries.length > 0) {
+      await supabase.from("candidate_responses").insert(responseEntries);
+    }
+
+    // Trigger CV analysis in background
+    if (formData.__cv_url) {
+      supabase.functions.invoke("analyze-cv", {
+        body: {
+          cvPath: formData.__cv_url,
+          candidateId,
+          jobId,
+          jobTitle: job!.title,
+          jobArea: job!.area,
+          requiredSkills: job!.required_skills,
+          behavioralProfile: job!.behavioral_profile,
+        },
+      }).catch(() => {});
+    }
+
+    // Save DISC file if uploaded
+    if (discUrl) {
+      await supabase.from("candidate_disc").insert([{
+        candidate_id: candidateId,
+        file_url: discUrl,
+        source: "formulario",
+      }]);
+
+      supabase.functions.invoke("analyze-disc", {
+        body: { candidateId },
+      }).catch(() => {});
+    }
+
+    // Trigger AI scoring of responses in background
+    supabase.functions.invoke("score-candidate-responses", {
+      body: { candidateId, jobId },
+    }).catch(() => {});
+
+    setSubmitted(true);
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
       const candidateId = crypto.randomUUID();
-
-      // Create candidate (no .select() needed — we already have the ID)
-      const { error: candidateError } = await supabase
-        .from("candidates")
-        .insert([{
-          id: candidateId,
-          job_id: jobId,
-          name: formData.name || "Sem nome",
-          email: formData.email || "sem@email.com",
-          phone: formData.phone || null,
-          cv_url: formData.__cv_url || null,
-          status: "in_progress",
-          lgpd_consent: true,
-          lgpd_consent_date: new Date().toISOString(),
-        } as any]);
-      if (candidateError) throw candidateError;
-
-      // Upload question files first
-      const uploadedFileUrls: Record<string, string> = {};
-      for (const [qKey, file] of Object.entries(questionFiles)) {
-        if (!file) continue;
-        const qId = qKey.replace("qfile_", "");
-        const sanitizedName = file.name
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-zA-Z0-9._-]/g, "_");
-        const fileName = `${jobId}/${candidateId}/${Date.now()}-${sanitizedName}`;
-        const { error: uploadError } = await supabase.storage.from("candidate-uploads").upload(fileName, file);
-        if (uploadError) throw new Error("Erro ao enviar arquivo: " + uploadError.message);
-        uploadedFileUrls[qId] = fileName;
-      }
-
-      // Save responses
-      const responseEntries = Object.entries(formData)
-        .filter(([key]) => key.startsWith("q_"))
-        .map(([key, value]) => ({
-          candidate_id: candidateId,
-          question_id: key.replace("q_", ""),
-          response_value: value,
-          file_url: uploadedFileUrls[key.replace("q_", "")] || null,
-        }));
-      // Also add file-only responses (upload fields without text)
-      for (const [qId, fileUrl] of Object.entries(uploadedFileUrls)) {
-        if (!responseEntries.find(r => r.question_id === qId)) {
-          responseEntries.push({
-            candidate_id: candidateId,
-            question_id: qId,
-            response_value: null,
-            file_url: fileUrl,
-          });
-        }
-      }
-      if (responseEntries.length > 0) {
-        await supabase.from("candidate_responses").insert(responseEntries);
-      }
-
-      // Trigger CV analysis in background
-      if (formData.__cv_url) {
-        supabase.functions.invoke("analyze-cv", {
-          body: {
-            cvPath: formData.__cv_url,
-            candidateId,
-            jobId,
-            jobTitle: job.title,
-            jobArea: job.area,
-            requiredSkills: job.required_skills,
-            behavioralProfile: job.behavioral_profile,
-          },
-        }).catch(() => {});
-      }
-
-      // Save DISC file if uploaded
-      if (formData.__disc_file_url) {
-        await supabase.from("candidate_disc").insert([{
-          candidate_id: candidateId,
-          file_url: formData.__disc_file_url,
-          source: "formulario",
-        }]);
-
-        // Trigger DISC analysis in background
-        supabase.functions.invoke("analyze-disc", {
-          body: { candidateId },
-        }).catch(() => {});
-      }
-
-      // Trigger AI scoring of responses in background
-      supabase.functions.invoke("score-candidate-responses", {
-        body: { candidateId, jobId },
-      }).catch(() => {});
-
-      setSubmitted(true);
+      await submitCandidate(candidateId);
     } catch (e: any) {
       toast({ title: "Erro ao enviar", description: e.message, variant: "destructive" });
     } finally {
