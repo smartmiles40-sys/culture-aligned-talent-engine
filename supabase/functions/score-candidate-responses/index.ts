@@ -183,7 +183,13 @@ SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para re
       });
 
       if (!aiResponse.ok) {
-        console.error(`AI error for stage ${stage.id}:`, aiResponse.status);
+        const statusCode = aiResponse.status;
+        console.error(`AI error for stage ${stage.id}:`, statusCode);
+        if (statusCode === 402) {
+          return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         continue;
       }
 
