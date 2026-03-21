@@ -152,7 +152,7 @@ SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para re
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: "Você é um avaliador de candidatos. Use a tool fornecida para retornar sua avaliação." },
             { role: "user", content: prompt },
@@ -183,7 +183,13 @@ SEJA JUSTO. Avalie o potencial real do candidato. Use a tool score_stage para re
       });
 
       if (!aiResponse.ok) {
-        console.error(`AI error for stage ${stage.id}:`, aiResponse.status);
+        const statusCode = aiResponse.status;
+        console.error(`AI error for stage ${stage.id}:`, statusCode);
+        if (statusCode === 402) {
+          return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         continue;
       }
 
