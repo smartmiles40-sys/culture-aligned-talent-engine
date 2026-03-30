@@ -43,6 +43,8 @@ export default function CandidateDetail() {
   const upsertDisc = useUpsertDisc();
   const updateCandidate = useUpdateCandidate();
   const deleteCandidate = useDeleteCandidate();
+  const { data: notes = [] } = useCandidateNotes(id);
+  const addNote = useAddCandidateNote();
 
   // Fetch candidate responses with questions and stage info
   const { data: candidateResponses = [] } = useQuery({
