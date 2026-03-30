@@ -5,7 +5,8 @@ import { useJobStages } from "@/hooks/useStages";
 import { useCandidateEvaluations, useUpsertEvaluation, useCandidateDisc, useUpsertDisc } from "@/hooks/useEvaluations";
 import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare, CheckCircle2, XCircle, ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Info, Trash2, Archive, Edit2, ExternalLink, RefreshCw, Loader2, Calendar, Download, MessageSquare, CheckCircle2, XCircle, ChevronDown, ChevronRight, FileText, Send } from "lucide-react";
+import { useCandidateNotes, useAddCandidateNote } from "@/hooks/useCandidateNotes";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export default function CandidateDetail() {
   const [showResponses, setShowResponses] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [pendingStage, setPendingStage] = useState<PipelineStage | null>(null);
+  const [noteText, setNoteText] = useState("");
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
@@ -41,6 +43,8 @@ export default function CandidateDetail() {
   const upsertDisc = useUpsertDisc();
   const updateCandidate = useUpdateCandidate();
   const deleteCandidate = useDeleteCandidate();
+  const { data: notes = [] } = useCandidateNotes(id);
+  const addNote = useAddCandidateNote();
 
   // Fetch candidate responses with questions and stage info
   const { data: candidateResponses = [] } = useQuery({
@@ -735,6 +739,51 @@ export default function CandidateDetail() {
             )}
           </div>
         )}
+        {/* Observações do Recrutador */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+          <h2 className="mb-3 font-display text-base font-bold text-foreground flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            Observações do Recrutador
+          </h2>
+          <div className="mb-4">
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Adicionar observação sobre a entrevista, comportamento, pontos de atenção..."
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <button
+              onClick={() => {
+                if (!noteText.trim() || !user?.id || !id) return;
+                addNote.mutate({ candidate_id: id, author_id: user.id, content: noteText.trim() });
+                setNoteText("");
+              }}
+              disabled={!noteText.trim() || addNote.isPending}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {addNote.isPending ? "Salvando..." : "Adicionar Observação"}
+            </button>
+          </div>
+          {notes.length > 0 ? (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {notes.map((note) => (
+                <div key={note.id} className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-foreground">{note.author_name || "Recrutador"}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {new Date(note.created_at).toLocaleDateString("pt-BR")} às {new Date(note.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{note.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada ainda.</p>
+          )}
+        </div>
+
         {scorableStages.length > 0 && (
           <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
             <h2 className="mb-3 font-display text-base font-bold text-foreground">Cálculo do Score Final</h2>
