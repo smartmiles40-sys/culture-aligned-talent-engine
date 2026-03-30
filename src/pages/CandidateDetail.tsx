@@ -33,7 +33,6 @@ export default function CandidateDetail() {
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [pendingStage, setPendingStage] = useState<PipelineStage | null>(null);
   const [noteText, setNoteText] = useState("");
-  const [pendingStage, setPendingStage] = useState<PipelineStage | null>(null);
 
   const { data: candidate, isLoading } = useCandidate(id);
   const { data: job } = useJob(candidate?.job_id);
