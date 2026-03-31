@@ -58,6 +58,14 @@ export default function PublicApplicationForm() {
   const [lgpdError, setLgpdError] = useState(false);
   const { toast } = useToast();
 
+  const sanitizeFileName = (name: string) =>
+    name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]/g, "_");
+
+  const isBlank = (value: unknown) => String(value ?? "").trim().length === 0;
+
   useEffect(() => {
     async function loadJob() {
       if (!jobId) return;
@@ -145,29 +153,13 @@ export default function PublicApplicationForm() {
   const totalSteps = formSteps.length;
   const currentStep = formSteps[step];
 
-  const handleCvUpload = async () => {
+  const handleCvUpload = () => {
     if (!cvFile) {
       setCvError("Por favor, envie seu currículo antes de avançar.");
       return;
     }
-    setAnalyzing(true);
     setCvError(null);
-    try {
-      // Sanitize filename to avoid invalid key errors with special characters
-      const sanitizedName = cvFile.name
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
-        .replace(/[^a-zA-Z0-9._-]/g, "_"); // replace special chars
-      const fileName = `${jobId}/${Date.now()}-${sanitizedName}`;
-      const { error: uploadError } = await supabase.storage.from("cvs").upload(fileName, cvFile);
-      if (uploadError) throw new Error("Erro ao enviar currículo: " + uploadError.message);
-      setFormData(prev => ({ ...prev, __cv_url: fileName }));
-      setStep(step + 1);
-    } catch (e: any) {
-      setCvError(e.message);
-      toast({ title: "Erro", description: e.message, variant: "destructive" });
-    } finally {
-      setAnalyzing(false);
-    }
+    setStep((prev) => prev + 1);
   };
 
   const handleDiscUpload = async () => {
@@ -179,14 +171,12 @@ export default function PublicApplicationForm() {
     setAnalyzing(true);
     setDiscError(null);
     try {
-      const sanitizedName = discFile.name
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const sanitizedName = sanitizeFileName(discFile.name);
       const fileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
       const { error: uploadError } = await supabase.storage.from("disc-files").upload(fileName, discFile);
       if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
       setFormData(prev => ({ ...prev, __disc_file_url: fileName }));
-      setStep(step + 1);
+      setStep((prev) => prev + 1);
     } catch (e: any) {
       setDiscError(e.message);
       toast({ title: "Erro", description: e.message, variant: "destructive" });
@@ -207,6 +197,16 @@ export default function PublicApplicationForm() {
 
   const submitCandidate = async (candidateId: string, discFileUrlOverride?: string) => {
     const discUrl = discFileUrlOverride || formData.__disc_file_url;
+    let cvUrl = formData.__cv_url || null;
+
+    if (!cvUrl && cvFile) {
+      const sanitizedName = sanitizeFileName(cvFile.name);
+      const fileName = `${jobId}/${Date.now()}-${sanitizedName}`;
+      const { error: uploadError } = await supabase.storage.from("cvs").upload(fileName, cvFile);
+      if (uploadError) throw new Error("Erro ao enviar currículo: " + uploadError.message);
+      cvUrl = fileName;
+    }
+
     // Create candidate
     const { error: candidateError } = await supabase
       .from("candidates")
@@ -216,7 +216,7 @@ export default function PublicApplicationForm() {
         name: formData.name || "Sem nome",
         email: formData.email || "sem@email.com",
         phone: formData.phone || null,
-        cv_url: formData.__cv_url || null,
+        cv_url: cvUrl,
         status: "in_progress",
         lgpd_consent: true,
         lgpd_consent_date: new Date().toISOString(),
@@ -261,10 +261,10 @@ export default function PublicApplicationForm() {
     }
 
     // Trigger CV analysis in background
-    if (formData.__cv_url) {
+    if (cvUrl) {
       supabase.functions.invoke("analyze-cv", {
         body: {
-          cvPath: formData.__cv_url,
+          cvPath: cvUrl,
           candidateId,
           jobId,
           jobTitle: job!.title,
@@ -297,6 +297,12 @@ export default function PublicApplicationForm() {
   };
 
   const handleSubmit = async () => {
+    if (!cvFile && !formData.__cv_url) {
+      setCvError("Por favor, envie seu currículo antes de concluir.");
+      toast({ title: "Currículo obrigatório", description: "Envie seu currículo para finalizar a candidatura.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const candidateId = crypto.randomUUID();
@@ -310,6 +316,15 @@ export default function PublicApplicationForm() {
 
   const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
   const textareaClass = "min-h-[80px] w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  const hasMissingRequiredAnswers = (stageId: string) =>
+    questions
+      .filter((q) => q.stage_id === stageId && q.is_required)
+      .some((q) => {
+        if (q.field_type === "upload") {
+          return !questionFiles[`qfile_${q.id}`];
+        }
+        return isBlank(formData[`q_${q.id}`]);
+      });
 
   if (submitted) {
     return (
@@ -603,11 +618,11 @@ export default function PublicApplicationForm() {
           {step < totalSteps - 1 ? (
             <button
               onClick={handleNext}
-              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && hasMissingRequiredAnswers(currentStep.stageId))}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
-              {currentStep?.type === "cv" ? (analyzing ? "Enviando..." : "Enviar Currículo") : currentStep?.type === "disc" ? (analyzing ? "Enviando..." : "Enviar DISC") : "Próximo"}
+              {currentStep?.type === "cv" ? "Próximo" : currentStep?.type === "disc" ? (analyzing ? "Enviando..." : "Enviar DISC") : "Próximo"}
             </button>
           ) : (
             <button
@@ -625,8 +640,8 @@ export default function PublicApplicationForm() {
                     let discFileName: string | undefined;
                     if (discFile) {
                       const sanitizedName = discFile.name
-                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                        .replace(/[^a-zA-Z0-9._-]/g, "_");
+                        ? sanitizeFileName(discFile.name)
+                        : "";
                       discFileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
                       const { error: uploadError } = await supabase.storage.from("disc-files").upload(discFileName, discFile);
                       if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
@@ -644,7 +659,7 @@ export default function PublicApplicationForm() {
                   handleSubmit();
                 }
               }}
-              disabled={submitting || analyzing || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={submitting || analyzing || (currentStep?.type === "stage" && currentStep.stageId && hasMissingRequiredAnswers(currentStep.stageId))}
               className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all duration-200 hover:opacity-90 disabled:opacity-50"
               style={{
                 opacity: lgpdConsent ? undefined : 0.4,
