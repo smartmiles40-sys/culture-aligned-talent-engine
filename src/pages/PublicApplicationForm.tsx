@@ -171,8 +171,9 @@ export default function PublicApplicationForm() {
   };
 
   const handleDiscUpload = async () => {
+    // DISC is optional - if no file, just advance
     if (!discFile) {
-      setDiscError("Por favor, envie o PDF com o resultado do DISC.");
+      setStep(step + 1);
       return;
     }
     setAnalyzing(true);
@@ -602,7 +603,7 @@ export default function PublicApplicationForm() {
           {step < totalSteps - 1 ? (
             <button
               onClick={handleNext}
-              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "disc" && !discFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={analyzing || (currentStep?.type === "cv" && !cvFile) || (currentStep?.type === "personal" && (!formData.name || !formData.email || !formData.phone)) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {analyzing && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -615,24 +616,23 @@ export default function PublicApplicationForm() {
                   setLgpdError(true);
                   return;
                 }
-                // If last step is DISC, upload DISC file first then submit
+                // If last step is DISC, upload DISC file first (if provided) then submit
                 if (currentStep?.type === "disc") {
-                  if (!discFile) {
-                    setDiscError("Por favor, envie o PDF com o resultado do DISC.");
-                    return;
-                  }
                   setSubmitting(true);
                   setAnalyzing(true);
                   setDiscError(null);
                   try {
-                    const sanitizedName = discFile.name
-                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                      .replace(/[^a-zA-Z0-9._-]/g, "_");
-                    const fileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
-                    const { error: uploadError } = await supabase.storage.from("disc-files").upload(fileName, discFile);
-                    if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
+                    let discFileName: string | undefined;
+                    if (discFile) {
+                      const sanitizedName = discFile.name
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[^a-zA-Z0-9._-]/g, "_");
+                      discFileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
+                      const { error: uploadError } = await supabase.storage.from("disc-files").upload(discFileName, discFile);
+                      if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
+                    }
                     const candidateId = crypto.randomUUID();
-                    await submitCandidate(candidateId, fileName);
+                    await submitCandidate(candidateId, discFileName);
                   } catch (e: any) {
                     setDiscError(e.message);
                     toast({ title: "Erro", description: e.message, variant: "destructive" });
@@ -644,7 +644,7 @@ export default function PublicApplicationForm() {
                   handleSubmit();
                 }
               }}
-              disabled={submitting || analyzing || (currentStep?.type === "disc" && !discFile) || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
+              disabled={submitting || analyzing || (currentStep?.type === "stage" && currentStep.stageId && questions.filter(q => q.stage_id === currentStep.stageId && q.is_required).some(q => !formData[`q_${q.id}`]?.trim()))}
               className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all duration-200 hover:opacity-90 disabled:opacity-50"
               style={{
                 opacity: lgpdConsent ? undefined : 0.4,
@@ -652,7 +652,7 @@ export default function PublicApplicationForm() {
               }}
             >
               {(submitting || analyzing) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {(submitting || analyzing) ? "Enviando..." : currentStep?.type === "disc" ? "Enviar DISC e Candidatura" : "Enviar Candidatura"}
+              {(submitting || analyzing) ? "Enviando..." : "Enviar Candidatura"}
             </button>
           )}
         </div>

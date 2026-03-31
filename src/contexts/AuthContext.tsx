@@ -28,6 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (_event === 'TOKEN_REFRESHED' && !session) {
+        // Token refresh failed, clean up
+        setRole(null);
+        setLoading(false);
+        return;
+      }
       if (session?.user) {
         setTimeout(() => {
           supabase
@@ -58,6 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(data?.role ?? null);
           });
       }
+      setLoading(false);
+    }).catch((err) => {
+      console.warn("Auth session error:", err);
+      // Clear stale tokens to prevent white screen
+      supabase.auth.signOut().catch(() => {});
+      setSession(null);
+      setUser(null);
+      setRole(null);
       setLoading(false);
     });
 
