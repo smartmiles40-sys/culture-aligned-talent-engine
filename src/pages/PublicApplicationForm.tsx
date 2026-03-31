@@ -652,7 +652,7 @@ export default function PublicApplicationForm() {
               }}
             >
               {(submitting || analyzing) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {(submitting || analyzing) ? "Enviando..." : currentStep?.type === "disc" ? "Enviar DISC e Candidatura" : "Enviar Candidatura"}
+              {(submitting || analyzing) ? "Enviando..." : "Enviar Candidatura"}
             </button>
           )}
         </div>
