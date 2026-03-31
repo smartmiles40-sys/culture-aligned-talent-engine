@@ -59,6 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
       }
       setLoading(false);
+    }).catch((err) => {
+      console.warn("Auth session error:", err);
+      // Clear stale tokens to prevent white screen
+      supabase.auth.signOut().catch(() => {});
+      setSession(null);
+      setUser(null);
+      setRole(null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
