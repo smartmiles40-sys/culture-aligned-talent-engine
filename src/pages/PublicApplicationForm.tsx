@@ -171,8 +171,9 @@ export default function PublicApplicationForm() {
   };
 
   const handleDiscUpload = async () => {
+    // DISC is optional - if no file, just advance
     if (!discFile) {
-      setDiscError("Por favor, envie o PDF com o resultado do DISC.");
+      setStep(step + 1);
       return;
     }
     setAnalyzing(true);
