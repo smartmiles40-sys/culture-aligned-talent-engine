@@ -18,6 +18,26 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
+const clearStaleAuthStorage = () => {
+  try {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith("sb-"))
+      .forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // no-op
+  }
+};
+
+const fetchUserRole = async (userId: string) => {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return data?.role ?? null;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -25,60 +45,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (_event === 'TOKEN_REFRESHED' && !session) {
-        // Token refresh failed, clean up
-        setRole(null);
-        setLoading(false);
-        return;
-      }
-      if (session?.user) {
-        setTimeout(() => {
-          supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .maybeSingle()
-            .then(({ data }) => {
-              setRole(data?.role ?? null);
-            });
-        }, 0);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        try {
+          const fetchedRole = await fetchUserRole(nextSession.user.id);
+          setRole(fetchedRole);
+        } catch {
+          setRole(null);
+        }
       } else {
         setRole(null);
       }
+
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .maybeSingle()
-          .then(({ data }) => {
-            setRole(data?.role ?? null);
-          });
-      }
-      setLoading(false);
-    }).catch((err) => {
-      console.warn("Auth session error:", err);
-      // Clear stale tokens to prevent white screen
-      supabase.auth.signOut().catch(() => {});
-      setSession(null);
-      setUser(null);
-      setRole(null);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(async ({ data: { session: currentSession } }) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          try {
+            const fetchedRole = await fetchUserRole(currentSession.user.id);
+            setRole(fetchedRole);
+          } catch {
+            setRole(null);
+          }
+        } else {
+          setRole(null);
+        }
+
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn("Auth session error:", err);
+        clearStaleAuthStorage();
+        supabase.auth.signOut().catch(() => {});
+        setSession(null);
+        setUser(null);
+        setRole(null);
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
+    clearStaleAuthStorage();
     await supabase.auth.signOut();
   };
 
