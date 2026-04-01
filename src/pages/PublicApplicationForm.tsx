@@ -67,7 +67,7 @@ interface QuestionData {
   question_order: number;
 }
 
-export default function PublicApplicationForm() {
+function PublicApplicationFormInner() {
   const { jobId } = useParams<{ jobId: string }>();
   const [job, setJob] = useState<JobData | null>(null);
   const [stages, setStages] = useState<StageData[]>([]);
