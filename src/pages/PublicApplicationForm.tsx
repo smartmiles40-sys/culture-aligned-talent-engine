@@ -214,13 +214,18 @@ export default function PublicApplicationForm() {
     }
   };
 
-  const handleNext = () => {
-    if (currentStep?.type === "cv") {
-      handleCvUpload();
-    } else if (currentStep?.type === "disc") {
-      handleDiscUpload();
-    } else {
-      setStep(step + 1);
+  const handleNext = async () => {
+    try {
+      if (currentStep?.type === "cv") {
+        handleCvUpload();
+      } else if (currentStep?.type === "disc") {
+        await handleDiscUpload();
+      } else {
+        setStep(step + 1);
+      }
+    } catch (e: any) {
+      console.error("handleNext error:", e);
+      toast({ title: "Erro", description: "Ocorreu um erro ao avançar. Tente novamente.", variant: "destructive" });
     }
   };
 
