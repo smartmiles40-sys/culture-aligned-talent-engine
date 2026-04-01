@@ -679,6 +679,35 @@ function PublicApplicationFormInner() {
                       discFileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
                       const { error: uploadError } = await supabase.storage.from("disc-files").upload(discFileName, discFile);
                       if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
+                    }
+                    const candidateId = crypto.randomUUID();
+                    await submitCandidate(candidateId, discFileName);
+                  } catch (e: any) {
+                    setDiscError(e.message);
+                    toast({ title: "Erro", description: e.message, variant: "destructive" });
+                  } finally {
+                    setAnalyzing(false);
+                    setSubmitting(false);
+                  }
+                } else {
+                  handleSubmit();
+                }
+              }}
+              disabled={submitting || analyzing || (currentStep?.type === "stage" && currentStep.stageId && hasMissingRequiredAnswers(currentStep.stageId))}
+              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition-all duration-200 hover:opacity-90 disabled:opacity-50"
+              style={{
+                opacity: lgpdConsent ? undefined : 0.4,
+                pointerEvents: lgpdConsent ? undefined : 'none',
+              }}
+            >
+              {(submitting || analyzing) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {(submitting || analyzing) ? "Enviando..." : "Enviar Candidatura"}
+            </button>
+          )}
+        </div>
+      </div>
+    </PublicLayout>
+  );
 }
 
 export default function PublicApplicationFormWrapper() {
