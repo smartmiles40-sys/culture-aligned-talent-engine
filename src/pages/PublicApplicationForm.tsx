@@ -1,11 +1,40 @@
 import PublicLayout from "@/components/layout/PublicLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component, ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import FileUpload from "@/components/shared/FileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+// Error Boundary to prevent white screen crashes
+class FormErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: any) { console.error("FormErrorBoundary caught:", error); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <PublicLayout>
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <div className="text-center space-y-4">
+              <AlertCircle className="h-10 w-10 text-destructive mx-auto" />
+              <h2 className="font-display text-xl font-bold text-foreground">Ocorreu um erro</h2>
+              <p className="text-sm text-muted-foreground">Houve um problema ao carregar o formulário.</p>
+              <button onClick={() => window.location.reload()} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                Recarregar Página
+              </button>
+            </div>
+          </div>
+        </PublicLayout>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface JobData {
   id: string;
