@@ -679,7 +679,15 @@ export default function PublicApplicationForm() {
                       discFileName = `${jobId}/${Date.now()}-disc-${sanitizedName}`;
                       const { error: uploadError } = await supabase.storage.from("disc-files").upload(discFileName, discFile);
                       if (uploadError) throw new Error("Erro ao enviar arquivo DISC: " + uploadError.message);
-                    }
+}
+
+export default function PublicApplicationFormWrapper() {
+  return (
+    <FormErrorBoundary>
+      <PublicApplicationFormInner />
+    </FormErrorBoundary>
+  );
+}
                     const candidateId = crypto.randomUUID();
                     await submitCandidate(candidateId, discFileName);
                   } catch (e: any) {
