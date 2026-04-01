@@ -161,8 +161,11 @@ function PublicApplicationFormInner() {
     { type: "cv", label: "Currículo" },
   ];
 
-  // Add stages that have questions (skip cv_upload, disc, and application since personal data is handled separately)
-  const questionStages = stages.filter(s => s.stage_key !== "cv_upload" && s.stage_key !== "disc" && s.stage_key !== "application");
+  // Only include stages that actually have questions configured (skip empty stages to avoid blank screens)
+  const questionStages = stages.filter(s => 
+    s.stage_key !== "cv_upload" && s.stage_key !== "disc" && s.stage_key !== "application" &&
+    questions.some(q => q.stage_id === s.id)
+  );
   questionStages.forEach((s, i) => {
     formSteps.push({ type: "stage", stageId: s.id, label: s.label || `Etapa ${i + 4}` });
   });
@@ -180,7 +183,7 @@ function PublicApplicationFormInner() {
   }
 
   const totalSteps = formSteps.length;
-  const currentStep = formSteps[step];
+  const currentStep = formSteps[Math.min(step, totalSteps - 1)];
 
   const handleCvUpload = () => {
     if (!cvFile) {
