@@ -183,7 +183,7 @@ function PublicApplicationFormInner() {
   }
 
   const totalSteps = formSteps.length;
-  const currentStep = formSteps[step];
+  const currentStep = formSteps[Math.min(step, totalSteps - 1)];
 
   const handleCvUpload = () => {
     if (!cvFile) {
