@@ -17,6 +17,7 @@ import Approved from "./pages/Approved";
 import Rejected from "./pages/Rejected";
 import PublicJobs from "./pages/PublicJobs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/redefinir-senha" element={<RedefinirSenha />} />
             <Route path="/vagas-abertas" element={<PublicJobs />} />
             <Route path="/aplicar/:jobId" element={<PublicApplicationForm />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
